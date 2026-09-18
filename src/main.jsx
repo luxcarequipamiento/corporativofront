@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowRight, ChevronLeft, ChevronRight, Download, Eye, EyeOff,
-  LogOut, PackageCheck, ShieldCheck, ShoppingBag, UserRound, Wrench
+  LoaderCircle, LogOut, PackageCheck, ShieldCheck, ShoppingBag, UserRound, Wrench
 } from 'lucide-react';
 import { clearSession, getAccessToken, getCatalog, getMe, login } from './api.js';
 import './styles.css';
@@ -123,6 +123,7 @@ function App() {
 function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -133,10 +134,13 @@ function Login({ onLogin }) {
     if (!username || !password) return setError('Ingresa tu usuario y contrasena.');
     if (!/^[a-z0-9._-]+$/.test(username)) return setError('Ingresa solo el usuario, sin @ ni dominio.');
     const email = `${username}@luxcarequipamiento.pe`;
+    setIsSubmitting(true);
     try {
       await onLogin(email, password);
     } catch (requestError) {
       setError(requestError.message);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -149,22 +153,24 @@ function Login({ onLogin }) {
           <h1>Acceso exclusivo para nuestros clientes</h1>
           <span>Gestiona equipamiento, accesorios y servicios para tu flota.</span>
         </div>
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form className="login-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <label htmlFor="username">Usuario</label>
           <div className="input-wrap">
             <UserRound size={19} aria-hidden="true" />
-            <input id="username" name="username" type="text" placeholder="Ingresa tu usuario" autoComplete="username" inputMode="text" />
+            <input id="username" name="username" type="text" placeholder="Ingresa tu usuario" autoComplete="username" inputMode="text" disabled={isSubmitting} />
           </div>
           <label htmlFor="password">Contrasena</label>
           <div className="input-wrap">
             <ShieldCheck size={19} aria-hidden="true" />
-            <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Ingresa tu clave" autoComplete="current-password" />
-            <button className="icon-button password-toggle" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'} title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}>
+            <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Ingresa tu clave" autoComplete="current-password" disabled={isSubmitting} />
+            <button className="icon-button password-toggle" type="button" disabled={isSubmitting} onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'} title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}>
               {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
             </button>
           </div>
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="primary-button" type="submit">Iniciar sesion <ArrowRight size={19} /></button>
+          <button className="primary-button" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <><LoaderCircle className="button-spinner" size={20} /> Ingresando...</> : <>Iniciar sesion <ArrowRight size={19} /></>}
+          </button>
         </form>
       </section>
       <section className="login-visual" aria-label="Negocio automotriz corporativo">

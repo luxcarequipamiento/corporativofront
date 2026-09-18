@@ -30,11 +30,15 @@ button { cursor: pointer; }
 .input-wrap input { width: 100%; min-height: 54px; padding: 0 52px 0 48px; border: 1px solid #303843; border-radius: 6px; outline: 0; color: #fff; background: #0e141b; transition: border-color .2s, box-shadow .2s; }
 .input-wrap input::placeholder { color: #697582; }
 .input-wrap input:focus { border-color: #ed1b2f; box-shadow: 0 0 0 3px rgba(237,27,47,.14); }
+.input-wrap input:disabled { cursor: wait; opacity: .72; }
 .password-toggle { position: absolute; right: 6px; width: 42px; height: 42px; border: 0; background: transparent; }
 .form-error { margin: 4px 0 0; color: #ff7784; font-size: 13px; }
 .primary-button { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 54px; margin-top: 12px; border: 0; border-radius: 6px; color: #fff; background: #e50920; text-transform: uppercase; font-size: 13px; font-weight: 700; transition: background .2s, transform .2s; }
 .primary-button:hover { background: #ff1730; }
 .primary-button:active { transform: translateY(1px); }
+.primary-button:disabled { cursor: wait; background: #b80b1d; opacity: .88; }
+.button-spinner { animation: button-spin .8s linear infinite; }
+@keyframes button-spin { to { transform: rotate(360deg); } }
 .login-visual { position: relative; min-height: 100vh; background: #111820; }
 .login-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,10,14,.36), transparent 38%), linear-gradient(0deg, rgba(7,10,14,.74), transparent 45%); }
 .login-visual > img { width: 100%; height: 100%; display: block; object-fit: cover; }

@@ -153,12 +153,12 @@ function Login({ onLogin }) {
           <label htmlFor="username">Usuario</label>
           <div className="input-wrap">
             <UserRound size={19} aria-hidden="true" />
-            <input id="username" name="username" type="text" placeholder="empresaford" autoComplete="username" inputMode="text" />
+            <input id="username" name="username" type="text" placeholder="Ingresa tu usuario" autoComplete="username" inputMode="text" />
           </div>
           <label htmlFor="password">Contrasena</label>
           <div className="input-wrap">
             <ShieldCheck size={19} aria-hidden="true" />
-            <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Ingresa tu contrasena" autoComplete="current-password" />
+            <input id="password" name="password" type={showPassword ? 'text' : 'password'} placeholder="Ingresa tu clave" autoComplete="current-password" />
             <button className="icon-button password-toggle" type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'} title={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}>
               {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
             </button>

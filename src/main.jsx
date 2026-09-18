@@ -200,7 +200,7 @@ function CorporatePage({ page, onLogout }) {
           <img className={`partner-logo ${page.id}`} src={page.logo} alt={page.name} />
         </div>
         <div className="account-area">
-          <span><UserRound size={18} /> Usuario {page.name}</span>
+          <span><UserRound size={18} /> Cliente {page.name}</span>
           <button className="icon-button logout-button" onClick={onLogout} aria-label="Cerrar sesion" title="Cerrar sesion"><LogOut size={20} /></button>
         </div>
       </header>

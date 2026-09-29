@@ -279,21 +279,30 @@ function catalogToPrices(catalog) {
       model: modelOf(item),
       item: { id: item.id_producto || item.id, name: item.nombre, price: formatPrice(item.precio_venta, item.moneda) }
     }))),
-    services: groupByModel((catalog.servicios_paquetes || []).map((servicePackage) => ({
-      model: modelOf(servicePackage),
-      item: {
-        id: servicePackage.id_servicio_paquete || servicePackage.id,
-        name: servicePackage.nombre,
-        description: servicePackage.descripcion,
-        price: formatPrice(servicePackage.precio_venta, servicePackage.moneda),
-        products: (servicePackage.productos || []).map((item) => ({
-          id: item.id_producto || item.id,
-          name: item.nombre,
-          price: formatPrice(item.precio_venta, item.moneda),
-          quantity: item.cantidad || 1
-        }))
-      }
-    })))
+    services: groupByModel((catalog.servicios_paquetes || []).flatMap((servicePackage) => {
+      const productsByModel = new Map();
+      (servicePackage.productos || []).forEach((product) => {
+        const model = modelOf(product);
+        const key = String(model.id_modelo);
+        if (!productsByModel.has(key)) productsByModel.set(key, { model, products: [] });
+        productsByModel.get(key).products.push(product);
+      });
+      return [...productsByModel.values()].map(({ model, products: packageProducts }) => ({
+        model,
+        item: {
+          id: `${servicePackage.id_servicio_paquete || servicePackage.id}-${model.id_modelo}`,
+          name: servicePackage.nombre,
+          description: servicePackage.descripcion,
+          price: formatPrice(servicePackage.precio_venta, servicePackage.moneda),
+          products: packageProducts.map((item) => ({
+            id: item.id_producto || item.id,
+            name: item.nombre,
+            price: formatPrice(item.precio_venta, item.moneda),
+            quantity: item.cantidad || 1
+          }))
+        }
+      }));
+    }))
   };
 }
 

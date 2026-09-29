@@ -367,14 +367,14 @@ function ModelGroups({ groups, type }) {
         <details className="model-group" key={group.id}>
           <summary>
             <span className="model-icon"><CarFront size={20} /></span>
-            <span className="model-name"><small>Modelo</small><strong>{group.name}</strong></span>
+            <strong className="model-name">{group.name}</strong>
             <span className="model-count">{group.items.length}</span>
             <ChevronDown className="disclosure-icon" size={20} />
           </summary>
           <div className="model-content">
             {type === 'accessories'
               ? group.items.map((item) => <CatalogItem key={item.id} item={item} />)
-              : group.items.map((item) => <ExpandableItem key={item.id} item={item} type={type} />)}
+              : group.items.map((item) => <ExpandableItem key={item.id} item={item} />)}
           </div>
         </details>
       ))}
@@ -386,20 +386,22 @@ function CatalogItem({ item }) {
   return <div className="catalog-item"><span>{item.name}</span><b>{item.price}</b></div>;
 }
 
-function ExpandableItem({ item, type }) {
-  const label = type === 'services' ? 'Paquete de servicio' : 'Kit';
+function ExpandableItem({ item }) {
+  const description = item.description?.trim();
+  const showDescription = description && description.localeCompare(item.name.trim(), 'es', { sensitivity: 'base' }) !== 0;
   return (
     <details className="catalog-entry">
       <summary>
-        <span className="entry-name"><small>{label}</small><strong>{item.name}</strong></span>
+        <strong className="entry-name">{item.name}</strong>
         <b>{item.price}</b>
         <ChevronDown className="disclosure-icon" size={18} />
       </summary>
       <div className="entry-content">
-        {item.description && <p>{item.description}</p>}
+        {showDescription && <p>{description}</p>}
+        <div className="component-heading"><span>Incluye</span><strong>{item.products.length} {item.products.length === 1 ? 'elemento' : 'elementos'}</strong></div>
         <div className="component-list">
           {item.products.length
-            ? item.products.map((product) => <div key={`${item.id}-${product.id}`}><span>{product.name}</span>{product.quantity > 1 && <small>x{product.quantity}</small>}</div>)
+            ? item.products.map((product, index) => <div key={`${item.id}-${product.id}`}><span className="component-index">{String(index + 1).padStart(2, '0')}</span><strong>{product.name}</strong>{product.quantity > 1 && <small>x{product.quantity}</small>}</div>)
             : <span className="component-empty">Sin productos asociados.</span>}
         </div>
       </div>

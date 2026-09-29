@@ -230,7 +230,7 @@ function CorporatePage({ page, onLogout }) {
 function catalogToPrices(catalog) {
   const products = catalog.productos || [];
   const formatPrice = (value, currency) => {
-    if (value === null || value === undefined || value === '') return 'Consultar';
+    if (value === null || value === undefined || value === '') return null;
     const amount = Number(value);
     if (!Number.isFinite(amount)) return String(value ?? '');
     return new Intl.NumberFormat('es-PE', { style: 'currency', currency: currency || 'PEN' }).format(amount);
@@ -393,7 +393,7 @@ function ModelGroups({ groups, type }) {
           <div className="model-content">
             {type === 'accessories'
               ? <ItemCards items={group.items} />
-              : group.items.map((item) => <ExpandableItem key={item.id} item={item} />)}
+              : group.items.map((item) => <ExpandableItem key={item.id} item={item} showItemPrices={type === 'services'} />)}
           </div>
         </details>
       ))}
@@ -401,42 +401,43 @@ function ModelGroups({ groups, type }) {
   );
 }
 
-function ItemCards({ items }) {
+function ItemCards({ items, showPrices = true }) {
   return (
     <>
       <div className="component-heading"><span>Incluye</span><strong>{items.length} {items.length === 1 ? 'elemento' : 'elementos'}</strong></div>
       <div className="component-list">
         {items.length
-          ? items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} />)
+          ? items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} showPrice={showPrices} />)
           : <span className="component-empty">Sin productos asociados.</span>}
       </div>
     </>
   );
 }
 
-function CatalogItem({ item, index }) {
+function CatalogItem({ item, index, showPrice }) {
+  const showMeta = (showPrice && item.price) || item.quantity > 1;
   return (
     <div className="catalog-item">
       <span className="component-index">{String(index + 1).padStart(2, '0')}</span>
       <strong>{item.name}</strong>
-      <span className="component-meta"><b>{item.price}</b>{item.quantity > 1 && <small>x{item.quantity}</small>}</span>
+      {showMeta && <span className="component-meta">{showPrice && item.price && <b>{item.price}</b>}{item.quantity > 1 && <small>x{item.quantity}</small>}</span>}
     </div>
   );
 }
 
-function ExpandableItem({ item }) {
+function ExpandableItem({ item, showItemPrices }) {
   const description = item.description?.trim();
   const showDescription = description && description.localeCompare(item.name.trim(), 'es', { sensitivity: 'base' }) !== 0;
   return (
     <details className="catalog-entry">
       <summary>
         <strong className="entry-name">{item.name}</strong>
-        <b>{item.price}</b>
+        {item.price && <b>{item.price}</b>}
         <ChevronDown className="disclosure-icon" size={18} />
       </summary>
       <div className="entry-content">
         {showDescription && <p>{description}</p>}
-        <ItemCards items={item.products} />
+        <ItemCards items={item.products} showPrices={showItemPrices} />
       </div>
     </details>
   );

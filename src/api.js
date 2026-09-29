@@ -42,13 +42,14 @@ export async function login(email, password) {
 export const getMe = () => request('/auth/me');
 export async function getCatalog(slug) {
   const safeSlug = encodeURIComponent(slug);
-  const [kits, accessories, services] = await Promise.all([
+  const [kits, accessories, servicePackages] = await Promise.all([
     request(`/${safeSlug}/kits`),
     request(`/${safeSlug}/accesorios`),
-    request(`/${safeSlug}/servicios`)
+    request(`/${safeSlug}/servicios-paquetes`)
   ]);
   return {
     kits: kits.data || [],
-    productos: [...(accessories.data || []), ...(services.data || [])]
+    productos: accessories.data || [],
+    servicios_paquetes: servicePackages.data || []
   };
 }

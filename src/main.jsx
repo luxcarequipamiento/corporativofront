@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  ArrowRight, ChevronLeft, ChevronRight, Download, Eye, EyeOff,
+  ArrowRight, CarFront, ChevronDown, ChevronLeft, ChevronRight, Download, Eye, EyeOff,
   LoaderCircle, LogOut, PackageCheck, ShieldCheck, ShoppingBag, UserRound, Wrench
 } from 'lucide-react';
 import { clearSession, getAccessToken, getCatalog, getMe, login } from './api.js';
 import './styles.css';
 
-const BROCHURE_URL = '/Brochure%20LuxCar%20x%20Chevrolet/LUXCAR%20X%20CHEVROLET.ai';
+
 
 const pages = {
   ford: {
     id: 'ford', name: 'Ford', logo: '/Logos/LogoFord.png', accent: '#1677d2',
+    brochure: '/brochures/ford/Chevrolet%20x%20Luxcar_Brochure.pdf',
     banner: '/images/page-adventure.png',
     eyebrow: 'Linea corporativa 4x4',
     title: 'Fuerza que lleva tu negocio mas lejos',
@@ -40,6 +41,7 @@ const pages = {
   },
   chevrolet: {
     id: 'chevrolet', name: 'Chevrolet', logo: '/Logos/Logo Chevrolet.png', accent: '#d8b44c',
+    brochure: '/brochures/chevrolet/Chevrolet%20x%20Luxcar_Brochure.pdf',
     banner: '/images/page-executive.png',
     eyebrow: 'Linea ejecutiva urbana',
     title: 'Versatilidad para cada desafio',
@@ -206,7 +208,7 @@ function CorporatePage({ page, onLogout }) {
       </header>
       <HeroBanner page={page} />
       <section className="action-row" aria-label="Acciones principales">
-        <a className="action-button" href={BROCHURE_URL} download>
+        <a className="action-button" href={page.brochure} download>
           <span className="action-icon"><Download size={22} /></span>
           <span><small>Documento corporativo</small>Descargar brochure</span>
           <ArrowRight size={20} />
@@ -228,19 +230,60 @@ function CorporatePage({ page, onLogout }) {
 function catalogToPrices(catalog) {
   const products = catalog.productos || [];
   const formatPrice = (value, currency) => {
+    if (value === null || value === undefined || value === '') return 'Consultar';
     const amount = Number(value);
     if (!Number.isFinite(amount)) return String(value ?? '');
     return new Intl.NumberFormat('es-PE', { style: 'currency', currency: currency || 'PEN' }).format(amount);
   };
-  const mapProduct = (item) => ({ name: item.nombre, price: formatPrice(item.precio_venta, item.moneda) });
+  const modelOf = (item) => item?.modelo || { id_modelo: 'unassigned', nombre_modelo: 'Sin modelo asignado' };
+  const groupByModel = (entries) => {
+    const groups = new Map();
+    entries.forEach(({ model, item }) => {
+      const key = String(model.id_modelo);
+      if (!groups.has(key)) groups.set(key, { id: key, name: model.nombre_modelo, items: [] });
+      groups.get(key).items.push(item);
+    });
+    return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  };
+  const kitEntries = (catalog.kits || []).flatMap((kit) => {
+    const componentsByModel = new Map();
+    (kit.productos || []).forEach((product) => {
+      const model = modelOf(product);
+      const key = String(model.id_modelo);
+      if (!componentsByModel.has(key)) componentsByModel.set(key, { model, products: [] });
+      componentsByModel.get(key).products.push(product);
+    });
+    if (!componentsByModel.size) {
+      const model = modelOf(kit);
+      componentsByModel.set(String(model.id_modelo), { model, products: [] });
+    }
+    return [...componentsByModel.values()].map(({ model, products: kitProducts }) => ({
+      model,
+      item: {
+        id: `${kit.id_kit || kit.id}-${model.id_modelo}`,
+        name: kit.nombre,
+        description: kit.descripcion,
+        price: formatPrice(kit.precio_venta, kit.moneda),
+        products: kitProducts.map((item) => ({ id: item.id_producto || item.id, name: item.nombre, quantity: item.cantidad || 1 }))
+      }
+    }));
+  });
   return {
-    kits: (catalog.kits || []).map((kit) => ({
-      name: kit.nombre,
-      price: formatPrice(kit.precio_venta, kit.moneda),
-      includes: (kit.productos || []).map((item) => item.cantidad > 1 ? `${item.nombre} x${item.cantidad}` : item.nombre)
-    })),
-    accessories: products.filter((item) => (item.tipo_producto || item.tipo)?.codigo === 'ACC').map(mapProduct),
-    services: products.filter((item) => (item.tipo_producto || item.tipo)?.codigo === 'SER').map(mapProduct)
+    kits: groupByModel(kitEntries),
+    accessories: groupByModel(products.filter((item) => (item.tipo_producto || item.tipo)?.codigo === 'ACC').map((item) => ({
+      model: modelOf(item),
+      item: { id: item.id_producto || item.id, name: item.nombre, price: formatPrice(item.precio_venta, item.moneda) }
+    }))),
+    services: groupByModel((catalog.servicios_paquetes || []).map((servicePackage) => ({
+      model: modelOf(servicePackage),
+      item: {
+        id: servicePackage.id_servicio_paquete || servicePackage.id,
+        name: servicePackage.nombre,
+        description: servicePackage.descripcion,
+        price: formatPrice(servicePackage.precio_venta, servicePackage.moneda),
+        products: (servicePackage.productos || []).map((item) => ({ id: item.id_producto || item.id, name: item.nombre, quantity: item.cantidad || 1 }))
+      }
+    })))
   };
 }
 
@@ -287,23 +330,81 @@ function LineupCarousel({ page }) {
 }
 
 function PriceList({ prices }) {
+  const sections = [
+    { id: 'kits', title: 'Kits', icon: PackageCheck, groups: prices.kits },
+    { id: 'services', title: 'Servicios', icon: Wrench, groups: prices.services },
+    { id: 'accessories', title: 'Accesorios', icon: ShoppingBag, groups: prices.accessories }
+  ].map((section) => ({
+    ...section,
+    count: section.groups.reduce((total, group) => total + group.items.length, 0)
+  }));
+  const [activeSection, setActiveSection] = useState(() => sections.find((section) => section.count)?.id || 'kits');
+  const selected = sections.find((section) => section.id === activeSection) || sections[0];
+
   return (
-    <section className="price-list" aria-label="Lista de precios">
-      <PriceCard number="01" title="Kits" icon={<PackageCheck size={21} />}>
-        {prices.kits.map((kit) => <div className="price-block" key={kit.name}><div className="price-row strong"><span>{kit.name}</span><b>{kit.price}</b></div><p>Incluye:</p><ul>{kit.includes.map((item) => <li key={item}>{item}</li>)}</ul></div>)}
-      </PriceCard>
-      <PriceCard number="02" title="Accesorios" icon={<ShoppingBag size={21} />}>
-        {prices.accessories.map((item) => <div className="price-row" key={item.name}><span>{item.name}</span><b>{item.price}</b></div>)}
-      </PriceCard>
-      <PriceCard number="03" title="Servicios" icon={<Wrench size={21} />}>
-        {prices.services.map((item) => <div className="price-row" key={item.name}><span>{item.name}</span><b>{item.price}</b></div>)}
-      </PriceCard>
+    <section className="catalog-panel" aria-label="Catalogo y precios">
+      <div className="catalog-heading">
+        <div><span>Catalogo actualizado</span><h2>Equipamiento y servicios</h2></div>
+        <strong>{selected.count} {selected.count === 1 ? 'opcion' : 'opciones'}</strong>
+      </div>
+      <div className="catalog-tabs" role="tablist" aria-label="Categorias del catalogo">
+        {sections.map((section) => {
+          const Icon = section.icon;
+          const active = section.id === selected.id;
+          return <button key={section.id} type="button" role="tab" aria-selected={active} className={active ? 'active' : ''} onClick={() => setActiveSection(section.id)}><Icon size={19} /><span>{section.title}</span><small>{section.count}</small></button>;
+        })}
+      </div>
+      <div className="catalog-content" role="tabpanel"><ModelGroups groups={selected.groups} type={selected.id} /></div>
     </section>
   );
 }
 
-function PriceCard({ number, title, icon, children }) {
-  return <article className="price-card"><div className="price-title"><span>{icon}</span><h3>{title}</h3><small>{number}</small></div>{children}</article>;
+function ModelGroups({ groups, type }) {
+  if (!groups.length) return <div className="catalog-empty">No hay opciones disponibles en esta categoria.</div>;
+  return (
+    <div className="model-groups">
+      {groups.map((group) => (
+        <details className="model-group" key={group.id}>
+          <summary>
+            <span className="model-icon"><CarFront size={20} /></span>
+            <span className="model-name"><small>Modelo</small><strong>{group.name}</strong></span>
+            <span className="model-count">{group.items.length}</span>
+            <ChevronDown className="disclosure-icon" size={20} />
+          </summary>
+          <div className="model-content">
+            {type === 'accessories'
+              ? group.items.map((item) => <CatalogItem key={item.id} item={item} />)
+              : group.items.map((item) => <ExpandableItem key={item.id} item={item} type={type} />)}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function CatalogItem({ item }) {
+  return <div className="catalog-item"><span>{item.name}</span><b>{item.price}</b></div>;
+}
+
+function ExpandableItem({ item, type }) {
+  const label = type === 'services' ? 'Paquete de servicio' : 'Kit';
+  return (
+    <details className="catalog-entry">
+      <summary>
+        <span className="entry-name"><small>{label}</small><strong>{item.name}</strong></span>
+        <b>{item.price}</b>
+        <ChevronDown className="disclosure-icon" size={18} />
+      </summary>
+      <div className="entry-content">
+        {item.description && <p>{item.description}</p>}
+        <div className="component-list">
+          {item.products.length
+            ? item.products.map((product) => <div key={`${item.id}-${product.id}`}><span>{product.name}</span>{product.quantity > 1 && <small>x{product.quantity}</small>}</div>)
+            : <span className="component-empty">Sin productos asociados.</span>}
+        </div>
+      </div>
+    </details>
+  );
 }
 
 createRoot(document.getElementById('root')).render(<App />);

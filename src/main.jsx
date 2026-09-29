@@ -264,7 +264,12 @@ function catalogToPrices(catalog) {
         name: kit.nombre,
         description: kit.descripcion,
         price: formatPrice(kit.precio_venta, kit.moneda),
-        products: kitProducts.map((item) => ({ id: item.id_producto || item.id, name: item.nombre, quantity: item.cantidad || 1 }))
+        products: kitProducts.map((item) => ({
+          id: item.id_producto || item.id,
+          name: item.nombre,
+          price: formatPrice(item.precio_venta, item.moneda),
+          quantity: item.cantidad || 1
+        }))
       }
     }));
   });
@@ -281,7 +286,12 @@ function catalogToPrices(catalog) {
         name: servicePackage.nombre,
         description: servicePackage.descripcion,
         price: formatPrice(servicePackage.precio_venta, servicePackage.moneda),
-        products: (servicePackage.productos || []).map((item) => ({ id: item.id_producto || item.id, name: item.nombre, quantity: item.cantidad || 1 }))
+        products: (servicePackage.productos || []).map((item) => ({
+          id: item.id_producto || item.id,
+          name: item.nombre,
+          price: formatPrice(item.precio_venta, item.moneda),
+          quantity: item.cantidad || 1
+        }))
       }
     })))
   };
@@ -373,7 +383,7 @@ function ModelGroups({ groups, type }) {
           </summary>
           <div className="model-content">
             {type === 'accessories'
-              ? group.items.map((item) => <CatalogItem key={item.id} item={item} />)
+              ? <ItemCards items={group.items} />
               : group.items.map((item) => <ExpandableItem key={item.id} item={item} />)}
           </div>
         </details>
@@ -382,8 +392,27 @@ function ModelGroups({ groups, type }) {
   );
 }
 
-function CatalogItem({ item }) {
-  return <div className="catalog-item"><span>{item.name}</span><b>{item.price}</b></div>;
+function ItemCards({ items }) {
+  return (
+    <>
+      <div className="component-heading"><span>Incluye</span><strong>{items.length} {items.length === 1 ? 'elemento' : 'elementos'}</strong></div>
+      <div className="component-list">
+        {items.length
+          ? items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} />)
+          : <span className="component-empty">Sin productos asociados.</span>}
+      </div>
+    </>
+  );
+}
+
+function CatalogItem({ item, index }) {
+  return (
+    <div className="catalog-item">
+      <span className="component-index">{String(index + 1).padStart(2, '0')}</span>
+      <strong>{item.name}</strong>
+      <span className="component-meta"><b>{item.price}</b>{item.quantity > 1 && <small>x{item.quantity}</small>}</span>
+    </div>
+  );
 }
 
 function ExpandableItem({ item }) {
@@ -398,12 +427,7 @@ function ExpandableItem({ item }) {
       </summary>
       <div className="entry-content">
         {showDescription && <p>{description}</p>}
-        <div className="component-heading"><span>Incluye</span><strong>{item.products.length} {item.products.length === 1 ? 'elemento' : 'elementos'}</strong></div>
-        <div className="component-list">
-          {item.products.length
-            ? item.products.map((product, index) => <div key={`${item.id}-${product.id}`}><span className="component-index">{String(index + 1).padStart(2, '0')}</span><strong>{product.name}</strong>{product.quantity > 1 && <small>x{product.quantity}</small>}</div>)
-            : <span className="component-empty">Sin productos asociados.</span>}
-        </div>
+        <ItemCards items={item.products} />
       </div>
     </details>
   );

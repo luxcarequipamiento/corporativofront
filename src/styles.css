@@ -118,11 +118,10 @@ details[open] > summary > .disclosure-icon { color: var(--brand-accent); transfo
 .component-list > div { display: grid; grid-template-columns: 32px minmax(0,1fr) auto; align-items: center; gap: 10px; min-height: 58px; padding: 9px 12px; border: 1px solid rgba(255,255,255,.09); border-radius: 5px; color: #cbd3dd; background: rgba(255,255,255,.025); font-size: 13px; }
 .component-list > div > strong { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
 .component-index { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; color: var(--brand-accent); background: rgba(255,255,255,.06); font-family: Sora, sans-serif; font-size: 11px; }
-.component-list small { color: var(--brand-accent); font-weight: 600; }
+.component-meta { display: flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
+.component-meta b { color: #fff; font-family: Sora, sans-serif; font-size: 13px; }
+.component-meta small { color: var(--brand-accent); font-weight: 600; }
 .component-empty, .catalog-empty { display: block; padding: 24px 10px; color: #7f8a97; font-size: 13px; text-align: center; }
-.catalog-item { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 58px; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,.08); }
-.catalog-item:last-child { border-bottom: 1px solid rgba(255,255,255,.08); }
-.catalog-item span { min-width: 0; overflow-wrap: anywhere; color: #d4dbe4; font-size: 14px; }
 
 .lineup { padding-top: 8px; }
 .section-heading { margin-bottom: 16px; }
@@ -185,7 +184,7 @@ details[open] > summary > .disclosure-icon { color: var(--brand-accent); transfo
   .catalog-entry > summary { gap: 10px; padding: 10px 8px; }
   .catalog-entry > summary > b, .catalog-item b { font-size: 13px; }
   .component-list { grid-template-columns: 1fr; }
-  .catalog-item { gap: 12px; padding-right: 8px; padding-left: 8px; }
+  .component-meta { align-items: flex-end; flex-direction: column; gap: 2px; }
   .product-grid { gap: 12px; }
   .login-panel { gap: 26px; min-height: 64vh; padding: 32px 24px; }
   .login-visual { min-height: 36vh; }

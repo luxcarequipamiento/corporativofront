@@ -10,6 +10,7 @@ body { margin: 0; min-width: 320px; min-height: 100vh; background: #080b0f; }
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
+.responsive-picture { display: block; line-height: 0; }
 
 .icon-button { display: grid; place-items: center; width: 42px; height: 42px; padding: 0; border: 1px solid rgba(255,255,255,.2); border-radius: 6px; color: #fff; background: rgba(8,11,15,.66); transition: border-color .2s, background .2s, transform .2s; }
 .icon-button:hover { border-color: #ed1b2f; background: rgba(237,27,47,.18); }
@@ -41,7 +42,8 @@ button { cursor: pointer; }
 @keyframes button-spin { to { transform: rotate(360deg); } }
 .login-visual { position: relative; min-height: 100vh; background: #111820; }
 .login-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,10,14,.36), transparent 38%), linear-gradient(0deg, rgba(7,10,14,.74), transparent 45%); }
-.login-visual > img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.login-visual > .responsive-picture { position: absolute; inset: 0; }
+.login-visual > .responsive-picture > img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .visual-caption { position: absolute; z-index: 1; right: clamp(24px, 5vw, 72px); bottom: clamp(28px, 6vw, 74px); display: grid; width: min(440px, calc(100% - 48px)); text-align: right; text-transform: uppercase; }
 .visual-caption span { color: #ed1b2f; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
 .visual-caption strong { font-family: Sora, sans-serif; font-size: clamp(24px, 3vw, 42px); line-height: 1.06; }
@@ -58,8 +60,9 @@ button { cursor: pointer; }
 .logout-button { background: transparent; }
 
 .hero { position: relative; height: clamp(420px, 48vw, 650px); overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 6px; background: #111820; isolation: isolate; }
-.hero > img { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.02); transition: opacity .8s ease, transform 6s ease; }
-.hero > img.active { opacity: 1; transform: scale(1.06); animation: carousel-fade .8s ease both; }
+.hero > .responsive-picture { position: absolute; inset: 0; z-index: -2; }
+.hero > .responsive-picture > img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.02); transition: opacity .8s ease, transform 6s ease; }
+.hero > .responsive-picture > img.active { opacity: 1; transform: scale(1.06); animation: carousel-fade .8s ease both; }
 @keyframes carousel-fade { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1.06); } }
 .hero::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg, rgba(4,7,10,.93) 0%, rgba(4,7,10,.74) 34%, rgba(4,7,10,.14) 70%), linear-gradient(0deg, rgba(4,7,10,.46), transparent 42%); }
 .hero-overlay { position: absolute; left: clamp(24px, 5vw, 70px); top: 50%; width: min(620px, calc(100% - 48px)); transform: translateY(-50%); }
@@ -71,7 +74,7 @@ button { cursor: pointer; }
 .carousel-dots button { width: 24px; height: 4px; padding: 0; border: 0; border-radius: 2px; background: rgba(255,255,255,.38); cursor: pointer; transition: width .2s, background .2s; }
 .carousel-dots button.active { width: 42px; background: var(--brand-accent); }
 
-.action-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; margin: 18px 0 28px; }
+.action-row { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin: 18px 0 28px; }
 .action-button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; min-height: 76px; padding: 12px 18px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; color: #fff; background: #0d131a; text-align: left; text-decoration: none; transition: border-color .2s, background .2s; }
 .action-button:hover { border-color: var(--brand-accent); background: #111922; }
 .action-button > span:nth-child(2) { font-size: 15px; font-weight: 600; }
@@ -132,7 +135,8 @@ details[open] > summary > .disclosure-icon { color: var(--brand-accent); transfo
 .section-heading h2 { margin: 3px 0 0; font-family: Sora, sans-serif; font-size: 21px; text-transform: uppercase; }
 .lineup-slide { position: relative; min-height: 420px; overflow: hidden; border: 1px solid rgba(255,255,255,.13); border-radius: 6px; background: #0d131a; }
 .lineup-slide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(4,7,10,.9), rgba(4,7,10,.3) 58%, transparent); pointer-events: none; }
-.lineup-slide > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: carousel-fade .8s ease both; }
+.lineup-slide > .responsive-picture { position: absolute; inset: 0; }
+.lineup-slide > .responsive-picture > img { width: 100%; height: 100%; object-fit: cover; animation: carousel-fade .8s ease both; }
 .lineup-caption { position: absolute; z-index: 1; left: clamp(22px, 5vw, 64px); top: 50%; width: min(430px, calc(100% - 44px)); transform: translateY(-50%); }
 .lineup-caption > span { color: var(--brand-accent); font-family: Sora, sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 1px; }
 .lineup-caption h3 { margin: 8px 0 12px; font-family: Sora, sans-serif; font-size: clamp(30px, 4vw, 54px); line-height: 1; text-transform: uppercase; }
@@ -151,6 +155,7 @@ details[open] > summary > .disclosure-icon { color: var(--brand-accent); transfo
   .login-visual { min-height: 42vh; }
   .visual-caption { bottom: 30px; }
   .hero { height: 520px; }
+  .action-row { grid-template-columns: 1fr; }
   .component-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .product-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
@@ -166,13 +171,13 @@ details[open] > summary > .disclosure-icon { color: var(--brand-accent); transfo
   .account-area > span { display: none; }
   .hero { height: min(600px, calc(100vh - 105px)); min-height: 500px; }
   .hero::after { background: linear-gradient(180deg, rgba(4,7,10,.18), rgba(4,7,10,.9) 72%); }
-  .hero > img { object-position: 64% center; }
+  .hero > .responsive-picture > img { object-position: 64% center; }
   .hero-overlay { top: auto; bottom: 90px; transform: none; }
   .hero-overlay h1 { font-size: clamp(34px, 11vw, 48px); }
   .carousel-controls { right: 16px; bottom: 18px; }
   .lineup-slide { min-height: 460px; }
   .lineup-slide::after { background: linear-gradient(0deg, rgba(4,7,10,.92), rgba(4,7,10,.12) 72%); }
-  .lineup-slide > img { object-position: 62% center; }
+  .lineup-slide > .responsive-picture > img { object-position: 62% center; }
   .lineup-caption { top: auto; bottom: 92px; transform: none; }
   .lineup-controls { right: 14px; bottom: 16px; }
   .action-row, .product-grid { grid-template-columns: 1fr; }

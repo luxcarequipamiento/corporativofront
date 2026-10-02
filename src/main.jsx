@@ -2,16 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   ArrowRight, CarFront, ChevronDown, ChevronLeft, ChevronRight, Download, Eye, EyeOff,
-  LoaderCircle, LogOut, PackageCheck, RefreshCw, ShieldCheck, ShoppingBag, UserRound, Wrench
+  LoaderCircle, LogOut, MessageCircle, PackageCheck, RefreshCw, ShieldCheck, ShoppingBag, UserRound, Wrench
 } from 'lucide-react';
 import { clearSession, getAccessToken, getCatalog, getMe, login } from './api.js';
+import { AdminMessaging, ClientMessaging } from './chat.jsx';
 import './styles.css';
 
+const responsiveAsset = (base) => ({
+  mobile: `${base}-mobile.jpg`,
+  tablet: `${base}-tablet.jpg`,
+  desktop: `${base}-desktop.jpg`
+});
+
+const loginVisual = responsiveAsset('/images/login-business');
+const loginLogo = responsiveAsset('/Logos/luxcar-login');
+const luxcarHeaderLogo = responsiveAsset('/Logos/luxcar-header');
 
 
 const pages = {
   ford: {
     id: 'ford', name: 'Ford', logo: '/Logos/LogoFord.png', accent: '#1677d2',
+    headerLogo: '/Logos/LogoFord.png',
     brochure: '/brochures/ford/Chevrolet%20x%20Luxcar_Brochure.pdf',
     banner: '/images/page-adventure.png',
     eyebrow: 'Línea corporativa 4x4',
@@ -41,16 +52,25 @@ const pages = {
   },
   chevrolet: {
     id: 'chevrolet', name: 'Chevrolet', logo: '/Logos/Logo Chevrolet.png', accent: '#d8b44c',
+    headerLogo: responsiveAsset('/Logos/chevrolet'),
     brochure: '/brochures/chevrolet/Chevrolet%20x%20Luxcar_Brochure.pdf',
-    banner: '/images/page-executive.png',
+    banner: responsiveAsset('/images/chevrolet-banner'),
     eyebrow: 'Línea ejecutiva urbana',
     title: 'Versatilidad para cada desafío',
     copy: 'Vehículos preparados para empresas que necesitan imagen, confort y disponibilidad diaria.',
     slides: [
-      { image: '/images/chevrolet-sedan-carousel.png', alt: 'Sedán ejecutivo circulando por un distrito corporativo' },
-      { image: '/images/chevrolet-fleet-carousel.png', alt: 'Van y crossover corporativos en una plaza urbana' }
+      { image: responsiveAsset('/images/chevrolet-colorado'), alt: 'Chevrolet Colorado corporativa' },
+      { image: responsiveAsset('/images/chevrolet-silverado'), alt: 'Chevrolet Silverado corporativa' },
+      { image: responsiveAsset('/images/chevrolet-n400'), alt: 'Chevrolet N-400 corporativa' },
+      { image: responsiveAsset('/images/chevrolet-groove'), alt: 'Chevrolet Groove corporativa' },
+      { image: responsiveAsset('/images/chevrolet-tracker'), alt: 'Chevrolet Tracker corporativa' },
+      { image: responsiveAsset('/images/chevrolet-captiva'), alt: 'Chevrolet Captiva corporativa' },
+      { image: responsiveAsset('/images/chevrolet-traverse'), alt: 'Chevrolet Traverse corporativa' },
+      { image: responsiveAsset('/images/chevrolet-sail'), alt: 'Chevrolet Sail corporativo' },
+      { image: responsiveAsset('/images/chevrolet-tahoe'), alt: 'Chevrolet Tahoe corporativa' },
+      { image: responsiveAsset('/images/chevrolet-suburban'), alt: 'Chevrolet Suburban corporativa' }
     ],
-    products: ['Sedan Executive', 'Urban Crossover', 'Passenger Van', 'Fleet Select'],
+    products: ['Colorado', 'Silverado', 'N-400', 'Groove', 'Tracker', 'Captiva', 'Traverse', 'Sail', 'Tahoe', 'Suburban'],
     prices: {
       kits: [
         { name: 'Kit Ejecutivo Comfort', price: '$1,100', includes: ['Tapizado premium', 'Polarizado UV', 'Organizador de cabina'] },
@@ -70,8 +90,19 @@ const pages = {
   }
 };
 
+function ResponsiveImage({ sources, alt, ...imageProps }) {
+  if (typeof sources === 'string') return <img src={sources} alt={alt} {...imageProps} />;
+  return (
+    <picture className="responsive-picture">
+      <source media="(max-width: 767px)" srcSet={sources.mobile} />
+      <source media="(max-width: 1023px)" srcSet={sources.tablet} />
+      <img src={sources.desktop} alt={alt} {...imageProps} />
+    </picture>
+  );
+}
+
 function App() {
-  const [activeBrand, setActiveBrand] = useState(null);
+  const [sessionView, setSessionView] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -83,10 +114,16 @@ function App() {
       }
       try {
         const profile = await getMe();
+        if (profile.rol === 'ADMIN') {
+          setSessionView({ role: 'ADMIN', profile: profile.usuario });
+          window.history.replaceState({}, '', '/admin/mensajes');
+          return;
+        }
         const slug = profile.cliente?.slug;
         if (!pages[slug] || profile.rol !== 'CLIENTE') throw new Error('Cliente no autorizado');
-        setActiveBrand(slug);
-        window.history.replaceState({}, '', `/${slug}`);
+        const section = window.location.pathname.endsWith('/mensajes') ? 'messages' : 'portal';
+        setSessionView({ role: 'CLIENTE', brand: slug, section });
+        window.history.replaceState({}, '', section === 'messages' ? `/${slug}/mensajes` : `/${slug}`);
       } catch {
         clearSession();
         window.history.replaceState({}, '', '/');
@@ -97,29 +134,62 @@ function App() {
     restoreSession();
   }, []);
 
+  useEffect(() => {
+    const syncClientRoute = () => {
+      setSessionView((current) => {
+        if (current?.role !== 'CLIENTE') return current;
+        return { ...current, section: window.location.pathname.endsWith('/mensajes') ? 'messages' : 'portal' };
+      });
+    };
+    window.addEventListener('popstate', syncClientRoute);
+    return () => window.removeEventListener('popstate', syncClientRoute);
+  }, []);
+
   async function authenticate(email, password) {
     const result = await login(email, password);
+    if (result.rol === 'ADMIN') {
+      window.history.pushState({}, '', '/admin/mensajes');
+      setSessionView({ role: 'ADMIN', profile: result.usuario });
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      return;
+    }
     const slug = result.cliente?.slug;
     if (!pages[slug] || result.rol !== 'CLIENTE') {
       clearSession();
       throw new Error('Este usuario no tiene un cliente corporativo autorizado.');
     }
     window.history.pushState({}, '', `/${slug}`);
-    setActiveBrand(slug);
+    setSessionView({ role: 'CLIENTE', brand: slug, section: 'portal' });
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
   function logout() {
     clearSession();
     window.history.pushState({}, '', '/');
-    setActiveBrand(null);
+    setSessionView(null);
   }
 
   if (loading) return <main className="loading-screen"><span>Cargando acceso corporativo...</span></main>;
 
-  return activeBrand
-    ? <CorporatePage page={pages[activeBrand]} onLogout={logout} />
-    : <Login onLogin={authenticate} />;
+  if (sessionView?.role === 'ADMIN') return <AdminMessaging profile={sessionView.profile} onLogout={logout} />;
+  if (sessionView?.role === 'CLIENTE' && sessionView.section === 'messages') {
+    const page = pages[sessionView.brand];
+    const closeMessages = () => {
+      window.history.pushState({}, '', `/${page.id}`);
+      setSessionView((current) => ({ ...current, section: 'portal' }));
+    };
+    return <ClientMessaging page={page} onBack={closeMessages} onLogout={logout} />;
+  }
+  if (sessionView?.role === 'CLIENTE') {
+    const page = pages[sessionView.brand];
+    const openMessages = () => {
+      window.history.pushState({}, '', `/${page.id}/mensajes`);
+      setSessionView((current) => ({ ...current, section: 'messages' }));
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    };
+    return <CorporatePage page={page} onLogout={logout} onOpenChat={openMessages} />;
+  }
+  return <Login onLogin={authenticate} />;
 }
 
 function Login({ onLogin }) {
@@ -149,10 +219,10 @@ function Login({ onLogin }) {
   return (
     <main className="login-shell">
       <section className="login-panel" aria-label="Acceso corporativo">
-        <img className="login-logo" src="/Logos/Logo LuxCar.png" alt="Lux Car" />
+        <ResponsiveImage className="login-logo" sources={loginLogo} alt="Lux Car" />
         <div className="login-copy">
           <p>Plataforma corporativa</p>
-          <h1>Acceso exclusivo para nuestros clientes</h1>
+          <h1>Acceso a la plataforma corporativa</h1>
           <span>Gestiona equipamiento, accesorios y servicios para tu flota.</span>
         </div>
         <form className="login-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
@@ -176,14 +246,14 @@ function Login({ onLogin }) {
         </form>
       </section>
       <section className="login-visual" aria-label="Negocio automotriz corporativo">
-        <img src="/images/login-business.png" alt="Ejecutivos cerrando un negocio junto a un vehículo corporativo" />
+        <ResponsiveImage sources={loginVisual} alt="Ejecutivos junto a un vehículo corporativo Lux Car" />
         <div className="visual-caption"><span>Soluciones corporativas</span><strong>Equipamiento que impulsa tu negocio</strong></div>
       </section>
     </main>
   );
 }
 
-function CorporatePage({ page, onLogout }) {
+function CorporatePage({ page, onLogout, onOpenChat }) {
   const [showPrices, setShowPrices] = useState(false);
   const [catalog, setCatalog] = useState(null);
   const [catalogError, setCatalogError] = useState('');
@@ -215,9 +285,9 @@ function CorporatePage({ page, onLogout }) {
     <main className="app-shell" style={{ '--brand-accent': page.accent }}>
       <header className="topbar">
         <div className="brand-group">
-          <img className="lux-logo" src="/Logos/Logo LuxCar.png" alt="Lux Car" />
+          <ResponsiveImage className="lux-logo" sources={luxcarHeaderLogo} alt="Lux Car" />
           <span className="brand-divider" aria-hidden="true" />
-          <img className={`partner-logo ${page.id}`} src={page.logo} alt={page.name} />
+          <ResponsiveImage className={`partner-logo ${page.id}`} sources={page.headerLogo} alt={page.name} />
         </div>
         <div className="account-area">
           <span><UserRound size={18} /> Cliente {page.name}</span>
@@ -234,6 +304,11 @@ function CorporatePage({ page, onLogout }) {
         <button className="action-button" type="button" onClick={() => setShowPrices((value) => !value)} aria-expanded={showPrices}>
           <span className="action-icon"><ShoppingBag size={22} /></span>
           <span><small>Catálogo actualizado</small>{showPrices ? 'Ocultar lista de precios' : 'Ver lista de precios'}</span>
+          <ArrowRight size={20} />
+        </button>
+        <button className="action-button" type="button" onClick={onOpenChat}>
+          <span className="action-icon"><MessageCircle size={22} /></span>
+          <span><small>Atención personalizada</small>Conversa con nosotros</span>
           <ArrowRight size={20} />
         </button>
       </section>
@@ -337,7 +412,7 @@ function catalogToPrices(catalog) {
 function HeroBanner({ page }) {
   return (
     <section className="hero" aria-label={`Línea ${page.name}`}>
-      <img className="active" src={page.banner} alt={`Vehículos corporativos ${page.name}`} />
+      <ResponsiveImage className="active" sources={page.banner} alt={`Vehículos corporativos ${page.name}`} />
       <div className="hero-overlay"><p>{page.eyebrow}</p><h1>{page.title}</h1><span>{page.copy}</span></div>
     </section>
   );
@@ -358,7 +433,7 @@ function LineupCarousel({ page }) {
     <section className="lineup" aria-roledescription="carrusel" aria-label={`Nuestra línea ${page.name}`}>
       <div className="section-heading"><span>Flota corporativa</span><h2>Nuestra línea {page.name}</h2></div>
       <article className="lineup-slide">
-        <img src={image.image} alt={image.alt} key={`${image.image}-${activeSlide}`} />
+        <ResponsiveImage sources={image.image} alt={image.alt} key={`${page.id}-${activeSlide}`} />
         <div className="lineup-caption">
           <span>0{activeSlide + 1} / 0{page.products.length}</span>
           <h3>{page.products[activeSlide]}</h3>

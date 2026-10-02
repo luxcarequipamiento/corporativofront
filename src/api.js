@@ -21,15 +21,17 @@ export function clearSession() {
 }
 
 async function request(path, options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  const { timeoutMs = REQUEST_TIMEOUT, ...fetchOptions } = options;
+  const isFormData = fetchOptions.body instanceof FormData;
+  const headers = { ...(!isFormData && { 'Content-Type': 'application/json' }), ...fetchOptions.headers };
   const token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
   let response;
   try {
-    response = await fetch(`${API_URL}${path}`, { ...options, headers, signal: options.signal || controller.signal });
+    response = await fetch(`${API_URL}${path}`, { ...fetchOptions, headers, signal: fetchOptions.signal || controller.signal });
   } finally {
     window.clearTimeout(timeout);
   }
@@ -78,6 +80,83 @@ export async function login(email, password) {
 }
 
 export const getMe = () => request('/auth/me');
+
+const FILE_MIME_TYPES = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  pdf: 'application/pdf',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+};
+
+function getFileMimeType(file) {
+  const extension = file.name.split('.').pop()?.toLowerCase();
+  return file.type || FILE_MIME_TYPES[extension] || 'application/octet-stream';
+}
+
+async function uploadToSignedUrl(signedUrl, file, mimeType) {
+  const body = new FormData();
+  body.append('cacheControl', '3600');
+  const uploadBody = file.type === mimeType ? file : new Blob([file], { type: mimeType });
+  body.append('', uploadBody, file.name);
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 120000);
+  let response;
+  try {
+    response = await fetch(signedUrl, {
+      method: 'PUT',
+      headers: { 'x-upsert': 'false' },
+      body,
+      signal: controller.signal
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.message || payload.error || 'No fue posible cargar el archivo');
+  }
+}
+
+async function sendMessageWithFile({ preparePath, messagePath, text, file }) {
+  let uploadedFile = null;
+  if (file) {
+    const mimeType = getFileMimeType(file);
+    const authorization = await request(preparePath, {
+      method: 'POST',
+      body: JSON.stringify({ name: file.name, mimeType, size: file.size })
+    });
+    await uploadToSignedUrl(authorization.data.signedUrl, file, mimeType);
+    uploadedFile = { ...authorization.data.file, path: authorization.data.path };
+  }
+  return request(messagePath, {
+    method: 'POST',
+    body: JSON.stringify({ contenido: text || '', archivo: uploadedFile }),
+    timeoutMs: 45000
+  });
+}
+
+export const getClientMessages = () => request('/mensajeria/cliente');
+export const sendClientMessage = (text, file) => sendMessageWithFile({
+  preparePath: '/mensajeria/cliente/archivos/preparar',
+  messagePath: '/mensajeria/cliente/mensajes',
+  text,
+  file
+});
+export const getAdminConversations = () => request('/mensajeria/admin/conversaciones');
+export const getAdminMessages = (conversationId) => request(`/mensajeria/admin/conversaciones/${encodeURIComponent(conversationId)}`);
+export const sendAdminMessage = (conversationId, text, file) => {
+  const basePath = `/mensajeria/admin/conversaciones/${encodeURIComponent(conversationId)}`;
+  return sendMessageWithFile({
+    preparePath: `${basePath}/archivos/preparar`,
+    messagePath: `${basePath}/mensajes`,
+    text,
+    file
+  });
+};
+
 export async function getCatalog(slug, { onRetry } = {}) {
   const safeSlug = encodeURIComponent(slug);
   const loadSection = (section, path) => requestWithRetry(path, {}, (retry) => onRetry?.({ section, ...retry }));

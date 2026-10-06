@@ -8,6 +8,7 @@ import {
   sendAdminMessage, sendClientMessage
 } from './api.js';
 import './chat.css';
+import { allyLabel } from './ally-label.js';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const LUXCAR_AVATAR = { src: '/avatarmensajeria/avatar-luxcar.png', alt: 'Lux Car' };
@@ -213,7 +214,7 @@ function ConversationBody({ messages, loading, error, avatars }) {
   );
 }
 
-export function ClientMessaging({ page, onBack, onLogout }) {
+export function ClientMessaging({ page, nombre, onBack, onLogout }) {
   const [messages, setMessages] = useState(clientWelcome);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -258,7 +259,7 @@ export function ClientMessaging({ page, onBack, onLogout }) {
           <img className={`client-partner-logo ${page.id}`} src={page.logo} alt={page.name} />
         </div>
         <div className="admin-account">
-          <span><strong>Cliente {page.name}</strong><small>Mensajería</small></span>
+          <span><strong>{allyLabel(nombre)} {nombre}</strong><small>Mensajería</small></span>
           <button type="button" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={20} /></button>
         </div>
       </header>
@@ -409,8 +410,8 @@ export function AdminMessaging({ profile, onLogout }) {
               <button type="button" className={conversation.id === selectedId ? 'active' : ''} onClick={() => selectConversation(conversation.id)} key={conversation.id}>
                 <BrandAvatar initials={conversation.initials} color={conversation.color} logoUrl={conversation.logoUrl} slug={conversation.slug} name={conversation.company} />
                 <span className="conversation-preview">
-                  <span><strong>{conversation.company}</strong><time>{formatListTime(conversation.lastMessageAt)}</time></span>
-                  <span><small>{conversation.lastMessage}</small>{conversation.unread > 0 && <b>{conversation.unread}</b>}</span>
+                  <span><strong>{conversation.contact}</strong><time>{formatListTime(conversation.lastMessageAt)}</time></span>
+                  <span><small>{conversation.company} · {conversation.lastMessage}</small>{conversation.unread > 0 && <b>{conversation.unread}</b>}</span>
                 </span>
               </button>
             )) : <p className="conversation-empty">{listLoading ? 'Cargando conversaciones...' : listError || (search ? 'No se encontraron conversaciones.' : 'Aún no hay conversaciones.')}</p>}
@@ -421,7 +422,7 @@ export function AdminMessaging({ profile, onLogout }) {
             <header className="chat-thread-header">
               <button className="thread-icon mobile-back" type="button" onClick={() => setShowMobileThread(false)} aria-label="Volver a conversaciones" title="Volver"><ArrowLeft size={21} /></button>
               <BrandAvatar initials={selected.initials} color={selected.color} logoUrl={selected.logoUrl} slug={selected.slug} name={selected.company} large />
-              <div className="thread-person"><strong>{selected.company}</strong><span>{selected.contact} · Cliente corporativo</span></div>
+              <div className="thread-person"><strong>{selected.contact}</strong><span>{selected.company} · Cliente corporativo</span></div>
               <button className="thread-icon" type="button" aria-label="Opciones de conversación" title="Opciones"><MoreVertical size={21} /></button>
             </header>
             <ConversationBody

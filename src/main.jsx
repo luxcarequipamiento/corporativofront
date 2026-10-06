@@ -7,6 +7,7 @@ import {
 import { clearSession, getAccessToken, getCatalog, getMe, login } from './api.js';
 import { AdminMessaging, ClientMessaging } from './chat.jsx';
 import './styles.css';
+import { allyLabel } from './ally-label.js';
 
 const responsiveAsset = (base) => ({
   mobile: `${base}-mobile.jpg`,
@@ -126,7 +127,7 @@ function App() {
         const slug = profile.cliente?.slug;
         if (!pages[slug] || profile.rol !== 'CLIENTE') throw new Error('Cliente no autorizado');
         const section = window.location.pathname.endsWith('/mensajes') ? 'messages' : 'portal';
-        setSessionView({ role: 'CLIENTE', brand: slug, section });
+        setSessionView({ role: 'CLIENTE', brand: slug, section, nombre: profile.usuario?.nombre });
         window.history.replaceState({}, '', section === 'messages' ? `/${slug}/mensajes` : `/${slug}`);
       } catch {
         clearSession();
@@ -163,7 +164,7 @@ function App() {
       throw new Error('Este usuario no tiene un cliente corporativo autorizado.');
     }
     window.history.pushState({}, '', `/${slug}`);
-    setSessionView({ role: 'CLIENTE', brand: slug, section: 'portal' });
+    setSessionView({ role: 'CLIENTE', brand: slug, section: 'portal', nombre: result.usuario?.nombre });
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -182,7 +183,7 @@ function App() {
       window.history.pushState({}, '', `/${page.id}`);
       setSessionView((current) => ({ ...current, section: 'portal' }));
     };
-    return <ClientMessaging page={page} onBack={closeMessages} onLogout={logout} />;
+    return <ClientMessaging page={page} nombre={sessionView.nombre} onBack={closeMessages} onLogout={logout} />;
   }
   if (sessionView?.role === 'CLIENTE') {
     const page = pages[sessionView.brand];
@@ -191,7 +192,7 @@ function App() {
       setSessionView((current) => ({ ...current, section: 'messages' }));
       window.scrollTo({ top: 0, behavior: 'instant' });
     };
-    return <CorporatePage page={page} onLogout={logout} onOpenChat={openMessages} />;
+    return <CorporatePage page={page} nombre={sessionView.nombre} onLogout={logout} onOpenChat={openMessages} />;
   }
   return <Login onLogin={authenticate} />;
 }
@@ -257,7 +258,7 @@ function Login({ onLogin }) {
   );
 }
 
-function CorporatePage({ page, onLogout, onOpenChat }) {
+function CorporatePage({ page, nombre, onLogout, onOpenChat }) {
   const [showPrices, setShowPrices] = useState(false);
   const [catalog, setCatalog] = useState(null);
   const [catalogError, setCatalogError] = useState('');
@@ -294,7 +295,7 @@ function CorporatePage({ page, onLogout, onOpenChat }) {
           <ResponsiveImage className={`partner-logo ${page.id}`} sources={page.headerLogo} alt={page.name} />
         </div>
         <div className="account-area">
-          <span><UserRound size={18} /> Cliente {page.name}</span>
+          <span><UserRound size={18} /> {allyLabel(nombre)} {nombre}</span>
           <button className="icon-button logout-button" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={20} /></button>
         </div>
       </header>

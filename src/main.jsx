@@ -55,9 +55,13 @@ const pages = {
     headerLogo: responsiveAsset('/Logos/chevrolet'),
     brochure: '/brochures/chevrolet/Chevrolet%20x%20Luxcar_Brochure.pdf',
     banner: responsiveAsset('/images/chevrolet-banner'),
-    eyebrow: 'Línea ejecutiva urbana',
-    title: 'Versatilidad para cada desafío',
-    copy: 'Vehículos preparados para empresas que necesitan imagen, confort y disponibilidad diaria.',
+    eyebrow: 'Experiencia Chevrolet',
+    title: 'Equipa tu Chevrolet a tu manera',
+    titleLines: ['Equipa tu', 'Chevrolet', 'a tu manera'],
+    copy: 'Explora accesorios, servicios y opciones de equipamiento para llevar tu Chevrolet más allá.',
+    lineupEyebrow: 'Conoce la gama',
+    lineupTitle: 'Tu Chevrolet, Tu Elección',
+    lineupCopy: 'Una configuración que potencia su carácter y lleva la experiencia de conducción más allá de fábrica.',
     slides: [
       { image: responsiveAsset('/images/chevrolet-colorado'), alt: 'Chevrolet Colorado corporativa' },
       { image: responsiveAsset('/images/chevrolet-silverado'), alt: 'Chevrolet Silverado corporativa' },
@@ -222,8 +226,8 @@ function Login({ onLogin }) {
         <ResponsiveImage className="login-logo" sources={loginLogo} alt="Lux Car" />
         <div className="login-copy">
           <p>Plataforma corporativa</p>
-          <h1>Acceso a la plataforma corporativa</h1>
-          <span>Gestiona equipamiento, accesorios y servicios para tu flota.</span>
+          <h1>ACCESO A NUESTRO ENTORNO CORPORATIVO</h1>
+          <span>Equipa, convierte y transforma tu vehículo.</span>
         </div>
         <form className="login-form" onSubmit={handleSubmit} aria-busy={isSubmitting}>
           <label htmlFor="username">Usuario</label>
@@ -282,7 +286,7 @@ function CorporatePage({ page, onLogout, onOpenChat }) {
 
   const prices = catalog ? catalogToPrices(catalog) : null;
   return (
-    <main className="app-shell" style={{ '--brand-accent': page.accent }}>
+    <main className={`app-shell app-shell--${page.id}`} style={{ '--brand-accent': page.accent }}>
       <header className="topbar">
         <div className="brand-group">
           <ResponsiveImage className="lux-logo" sources={luxcarHeaderLogo} alt="Lux Car" />
@@ -413,7 +417,7 @@ function HeroBanner({ page }) {
   return (
     <section className="hero" aria-label={`Línea ${page.name}`}>
       <ResponsiveImage className="active" sources={page.banner} alt={`Vehículos corporativos ${page.name}`} />
-      <div className="hero-overlay"><p>{page.eyebrow}</p><h1>{page.title}</h1><span>{page.copy}</span></div>
+      <div className="hero-overlay"><p>{page.eyebrow}</p><h1>{page.titleLines ? page.titleLines.map((line) => <span key={line}>{line}</span>) : page.title}</h1><span>{page.copy}</span></div>
     </section>
   );
 }
@@ -431,13 +435,13 @@ function LineupCarousel({ page }) {
 
   return (
     <section className="lineup" aria-roledescription="carrusel" aria-label={`Nuestra línea ${page.name}`}>
-      <div className="section-heading"><span>Flota corporativa</span><h2>Nuestra línea {page.name}</h2></div>
+      <div className="section-heading"><span>{page.lineupEyebrow || 'Flota corporativa'}</span><h2>{page.lineupTitle || `Nuestra línea ${page.name}`}</h2></div>
       <article className="lineup-slide">
         <ResponsiveImage sources={image.image} alt={image.alt} key={`${page.id}-${activeSlide}`} />
         <div className="lineup-caption">
-          <span>0{activeSlide + 1} / 0{page.products.length}</span>
+          <span>{page.id === 'chevrolet' ? `${String(activeSlide + 1).padStart(2, '0')} / ${page.products.length}` : `0${activeSlide + 1} / 0${page.products.length}`}</span>
           <h3>{page.products[activeSlide]}</h3>
-          <p>Configuración corporativa preparada para las necesidades de tu operación.</p>
+          <p>{page.lineupCopy || 'Configuración corporativa preparada para las necesidades de tu operación.'}</p>
         </div>
         <div className="lineup-controls">
           <button className="icon-button" onClick={() => moveSlide(-1)} aria-label="Vehículo anterior" title="Vehículo anterior"><ChevronLeft /></button>
@@ -496,7 +500,7 @@ function ModelGroups({ groups, type }) {
           <div className="model-content">
             {type === 'accessories'
               ? <ItemCards items={group.items} />
-              : group.items.map((item) => <ExpandableItem key={item.id} item={item} showItemPrices={type === 'services'} />)}
+              : <><div className="catalog-entry-heading" aria-hidden="true"><span>{type === 'services' ? 'Servicio / paquete' : 'Kit de equipamiento'}</span><span>Precio total</span><span /></div>{group.items.map((item) => <ExpandableItem key={item.id} item={item} showItemPrices={type === 'services'} />)}</>}
           </div>
         </details>
       ))}
@@ -508,23 +512,23 @@ function ItemCards({ items, showPrices = true }) {
   return (
     <>
       <div className="component-heading"><span>Incluye</span><strong>{items.length} {items.length === 1 ? 'elemento' : 'elementos'}</strong></div>
-      <div className="component-list">
-        {items.length
-          ? items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} showPrice={showPrices} />)
-          : <span className="component-empty">Sin productos asociados.</span>}
-      </div>
+      {items.length ? <div className="catalog-table-wrap"><table className="catalog-table">
+        <caption className="visually-hidden">Productos incluidos{showPrices ? ' y precios' : ''}</caption>
+        <thead><tr><th scope="col">N.º</th><th scope="col">Producto / accesorio</th><th scope="col">Cantidad</th>{showPrices && <th scope="col">Precio</th>}</tr></thead>
+        <tbody>{items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} showPrice={showPrices} />)}</tbody>
+      </table></div> : <span className="component-empty">Sin productos asociados.</span>}
     </>
   );
 }
 
 function CatalogItem({ item, index, showPrice }) {
-  const showMeta = (showPrice && item.price) || item.quantity > 1;
   return (
-    <div className="catalog-item">
-      <span className="component-index">{String(index + 1).padStart(2, '0')}</span>
-      <strong>{item.name}</strong>
-      {showMeta && <span className="component-meta">{showPrice && item.price && <b>{item.price}</b>}{item.quantity > 1 && <small>x{item.quantity}</small>}</span>}
-    </div>
+    <tr>
+      <td className="catalog-number">{String(index + 1).padStart(2, '0')}</td>
+      <th scope="row" className="catalog-product">{item.name}</th>
+      <td className="catalog-quantity"><span>{item.quantity || 1}</span></td>
+      {showPrice && <td className="catalog-price">{item.price || '—'}</td>}
+    </tr>
   );
 }
 
@@ -535,7 +539,7 @@ function ExpandableItem({ item, showItemPrices }) {
     <details className="catalog-entry">
       <summary>
         <strong className="entry-name">{item.name}</strong>
-        {item.price && <b>{item.price}</b>}
+        <b className="catalog-total">{item.price || '—'}</b>
         <ChevronDown className="disclosure-icon" size={18} />
       </summary>
       <div className="entry-content">

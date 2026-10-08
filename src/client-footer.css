@@ -1,0 +1,29 @@
+.client-footer {
+  width: min(1480px, calc(100% - 9vw));
+  margin: 0 auto;
+  padding: 36px 0 22px;
+  border-top: 2px solid var(--footer-accent);
+  color: #f7f9fc;
+}
+.client-footer-content { display: flex; justify-content: space-between; gap: 40px; padding-bottom: 30px; }
+.client-footer-identity { max-width: 560px; }
+.client-footer-logos { display: flex; align-items: center; gap: 22px; margin-bottom: 24px; }
+.client-footer-logos img { display: block; width: 130px; height: 46px; object-fit: contain; }
+.client-footer-logos .client-footer-partner { width: 100px; }
+.client-footer-logos > span { width: 1px; height: 30px; background: rgba(255,255,255,.3); }
+.client-footer-identity .client-footer-eyebrow { margin: 0 0 8px; color: var(--footer-accent); font-size: 11px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; }
+.client-footer h2 { margin: 0 0 10px; font-size: clamp(20px, 2.2vw, 28px); font-weight: 600; line-height: 1.3; }
+.client-footer-identity > p:last-child { margin: 0; color: #b6bec9; font-size: 13px; line-height: 1.7; }
+.client-footer-links { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding-top: 6px; }
+.client-footer-links > span { margin-bottom: 2px; font-size: 13px; font-weight: 600; }
+.client-footer-links a, .client-footer-links button { display: inline-flex; align-items: center; gap: 10px; padding: 0; border: 0; color: #b6bec9; background: transparent; font: inherit; font-size: 13px; text-decoration: none; text-align: left; }
+.client-footer-links a:hover, .client-footer-links button:hover { color: var(--footer-accent); }
+.client-footer-links a:focus-visible, .client-footer-links button:focus-visible { outline: 2px solid var(--footer-accent); outline-offset: 6px; border-radius: 2px; }
+.client-footer-bottom { display: flex; justify-content: space-between; gap: 16px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.12); color: #909ba9; }
+.client-footer-bottom small, .client-footer-bottom > span { font-size: 11px; }
+@media (max-width: 640px) {
+  .client-footer { width: calc(100% - 28px); padding-top: 28px; }
+  .client-footer-content { flex-direction: column; gap: 28px; }
+  .client-footer-logos { gap: 16px; }
+  .client-footer-bottom { flex-direction: column; gap: 8px; }
+}

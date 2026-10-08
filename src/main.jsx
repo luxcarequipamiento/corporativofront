@@ -7,6 +7,10 @@ import {
 import { clearSession, getAccessToken, getCatalog, getMe, login } from './api.js';
 import { AdminMessaging, ClientMessaging } from './chat.jsx';
 import './styles.css';
+import { ChevroletCatalog } from './chevrolet-catalog.jsx';
+import { catalogToPrices } from './catalog.js';
+import { Quotation, AddToQuote } from './quotation.jsx';
+import { ClientFooter } from './client-footer.jsx';
 import { allyLabel } from './ally-label.js';
 
 const responsiveAsset = (base) => ({
@@ -75,23 +79,7 @@ const pages = {
       { image: responsiveAsset('/images/chevrolet-tahoe'), alt: 'Chevrolet Tahoe corporativa' },
       { image: responsiveAsset('/images/chevrolet-suburban'), alt: 'Chevrolet Suburban corporativa' }
     ],
-    products: ['Colorado', 'Silverado', 'N-400', 'Groove', 'Tracker', 'Captiva', 'Traverse', 'Sail', 'Tahoe', 'Suburban'],
-    prices: {
-      kits: [
-        { name: 'Kit Ejecutivo Comfort', price: '$1,100', includes: ['Tapizado premium', 'Polarizado UV', 'Organizador de cabina'] },
-        { name: 'Kit Flota Inteligente', price: '$890', includes: ['Rastreo GPS', 'Cámara dual', 'Sensor de fatiga'] }
-      ],
-      accessories: [
-        { name: 'Cargador múltiple USB-C', price: '$75' },
-        { name: 'Soporte tablet ejecutivo', price: '$130' },
-        { name: 'Maletero modular', price: '$210' }
-      ],
-      services: [
-        { name: 'Lavado premium mensual', price: '$65' },
-        { name: 'Asistencia 24/7', price: '$120' },
-        { name: 'Gestión documental', price: '$85' }
-      ]
-    }
+    products: ['Colorado', 'Silverado', 'N-400', 'Groove', 'Tracker', 'Captiva', 'Traverse', 'Sail', 'Tahoe', 'Suburban']
   }
 };
 
@@ -127,7 +115,7 @@ function App() {
         const slug = profile.cliente?.slug;
         if (!pages[slug] || profile.rol !== 'CLIENTE') throw new Error('Cliente no autorizado');
         const section = window.location.pathname.endsWith('/mensajes') ? 'messages' : 'portal';
-        setSessionView({ role: 'CLIENTE', brand: slug, section, nombre: profile.usuario?.nombre });
+        setSessionView({ role: 'CLIENTE', brand: slug, section, nombre: profile.usuario?.nombre, nombreCompleto: profile.usuario?.nombre_completo || profile.usuario?.nombre });
         window.history.replaceState({}, '', section === 'messages' ? `/${slug}/mensajes` : `/${slug}`);
       } catch {
         clearSession();
@@ -164,7 +152,7 @@ function App() {
       throw new Error('Este usuario no tiene un cliente corporativo autorizado.');
     }
     window.history.pushState({}, '', `/${slug}`);
-    setSessionView({ role: 'CLIENTE', brand: slug, section: 'portal', nombre: result.usuario?.nombre });
+    setSessionView({ role: 'CLIENTE', brand: slug, section: 'portal', nombre: result.usuario?.nombre, nombreCompleto: result.usuario?.nombre_completo || result.usuario?.nombre });
     window.scrollTo({ top: 0, behavior: 'instant' });
   }
 
@@ -183,7 +171,7 @@ function App() {
       window.history.pushState({}, '', `/${page.id}`);
       setSessionView((current) => ({ ...current, section: 'portal' }));
     };
-    return <ClientMessaging page={page} nombre={sessionView.nombre} onBack={closeMessages} onLogout={logout} />;
+    return <><ClientMessaging page={page} nombre={sessionView.nombre} onBack={closeMessages} onLogout={logout} /><ClientFooter page={page} onNavigate={closeMessages} navigationLabel="Volver al portal" /></>;
   }
   if (sessionView?.role === 'CLIENTE') {
     const page = pages[sessionView.brand];
@@ -192,7 +180,7 @@ function App() {
       setSessionView((current) => ({ ...current, section: 'messages' }));
       window.scrollTo({ top: 0, behavior: 'instant' });
     };
-    return <CorporatePage page={page} nombre={sessionView.nombre} onLogout={logout} onOpenChat={openMessages} />;
+    return <><CorporatePage page={page} nombre={sessionView.nombre} nombreCompleto={sessionView.nombreCompleto} onLogout={logout} onOpenChat={openMessages} /><ClientFooter page={page} onNavigate={openMessages} navigationLabel="Conversa con nosotros" /></>;
   }
   return <Login onLogin={authenticate} />;
 }
@@ -258,8 +246,15 @@ function Login({ onLogin }) {
   );
 }
 
-function CorporatePage({ page, nombre, onLogout, onOpenChat }) {
+function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
   const [showPrices, setShowPrices] = useState(false);
+  const [quoteItems, setQuoteItems] = useState([]);
+  const addToQuote = (item, group, type) => {
+    const key = `${type}:${group.id}:${item.id}`;
+    setQuoteItems((current) => current.some((entry) => entry.key === key)
+      ? current.map((entry) => entry.key === key ? { ...entry, quantity: Math.min(999, entry.quantity + 1) } : entry)
+      : [...current, { ...item, key, model: group.name, type, quantity: 1 }]);
+  };
   const [catalog, setCatalog] = useState(null);
   const [catalogError, setCatalogError] = useState('');
   const [catalogRetry, setCatalogRetry] = useState('');
@@ -308,7 +303,7 @@ function CorporatePage({ page, nombre, onLogout, onOpenChat }) {
         </a>
         <button className="action-button" type="button" onClick={() => setShowPrices((value) => !value)} aria-expanded={showPrices}>
           <span className="action-icon"><ShoppingBag size={22} /></span>
-          <span><small>Catálogo actualizado</small>{showPrices ? 'Ocultar lista de precios' : 'Ver lista de precios'}</span>
+          <span><small>Catálogo y cotizador</small>{showPrices ? 'Ocultar catálogo' : 'Armar cotización'}</span>
           <ArrowRight size={20} />
         </button>
         <button className="action-button" type="button" onClick={onOpenChat}>
@@ -329,90 +324,15 @@ function CorporatePage({ page, nombre, onLogout, onOpenChat }) {
           <button type="button" onClick={retryCatalog}><RefreshCw size={18} /> Reintentar</button>
         </div>
       )}
-      {showPrices && prices && <PriceList prices={prices} />}
+      {prices && <div className="quotation-layout" hidden={!showPrices}>
+        {page.id === 'chevrolet' ? <ChevroletCatalog prices={prices} onAdd={addToQuote} quoteItems={quoteItems} /> : <PriceList prices={prices} onAdd={addToQuote} />}
+        <Quotation items={quoteItems} setItems={setQuoteItems} page={page} nombre={nombre} advisor={nombreCompleto} />
+      </div>}
       <LineupCarousel page={page} />
     </main>
   );
 }
 
-function catalogToPrices(catalog) {
-  const products = catalog.productos || [];
-  const formatPrice = (value, currency) => {
-    if (value === null || value === undefined || value === '') return null;
-    const amount = Number(value);
-    if (!Number.isFinite(amount)) return String(value ?? '');
-    return new Intl.NumberFormat('es-PE', { style: 'currency', currency: currency || 'PEN' }).format(amount);
-  };
-  const modelOf = (item) => item?.modelo || { id_modelo: 'unassigned', nombre_modelo: 'Sin modelo asignado' };
-  const groupByModel = (entries) => {
-    const groups = new Map();
-    entries.forEach(({ model, item }) => {
-      const key = String(model.id_modelo);
-      if (!groups.has(key)) groups.set(key, { id: key, name: model.nombre_modelo, items: [] });
-      groups.get(key).items.push(item);
-    });
-    return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
-  };
-  const kitEntries = (catalog.kits || []).flatMap((kit) => {
-    const componentsByModel = new Map();
-    (kit.productos || []).forEach((product) => {
-      const model = modelOf(product);
-      const key = String(model.id_modelo);
-      if (!componentsByModel.has(key)) componentsByModel.set(key, { model, products: [] });
-      componentsByModel.get(key).products.push(product);
-    });
-    if (!componentsByModel.size) {
-      const model = modelOf(kit);
-      componentsByModel.set(String(model.id_modelo), { model, products: [] });
-    }
-    return [...componentsByModel.values()].map(({ model, products: kitProducts }) => ({
-      model,
-      item: {
-        id: `${kit.id_kit || kit.id}-${model.id_modelo}`,
-        name: kit.nombre,
-        description: kit.descripcion,
-        price: formatPrice(kit.precio_venta, kit.moneda),
-        products: kitProducts.map((item) => ({
-          id: item.id_producto || item.id,
-          name: item.nombre,
-          price: formatPrice(item.precio_venta, item.moneda),
-          quantity: item.cantidad || 1
-        }))
-      }
-    }));
-  });
-  return {
-    kits: groupByModel(kitEntries),
-    accessories: groupByModel(products.filter((item) => (item.tipo_producto || item.tipo)?.codigo === 'ACC').map((item) => ({
-      model: modelOf(item),
-      item: { id: item.id_producto || item.id, name: item.nombre, price: formatPrice(item.precio_venta, item.moneda) }
-    }))),
-    services: groupByModel((catalog.servicios_paquetes || []).flatMap((servicePackage) => {
-      const productsByModel = new Map();
-      (servicePackage.productos || []).forEach((product) => {
-        const model = modelOf(product);
-        const key = String(model.id_modelo);
-        if (!productsByModel.has(key)) productsByModel.set(key, { model, products: [] });
-        productsByModel.get(key).products.push(product);
-      });
-      return [...productsByModel.values()].map(({ model, products: packageProducts }) => ({
-        model,
-        item: {
-          id: `${servicePackage.id_servicio_paquete || servicePackage.id}-${model.id_modelo}`,
-          name: servicePackage.nombre,
-          description: servicePackage.descripcion,
-          price: formatPrice(servicePackage.precio_venta, servicePackage.moneda),
-          products: packageProducts.map((item) => ({
-            id: item.id_producto || item.id,
-            name: item.nombre,
-            price: formatPrice(item.precio_venta, item.moneda),
-            quantity: item.cantidad || 1
-          }))
-        }
-      }));
-    }))
-  };
-}
 
 function HeroBanner({ page }) {
   return (
@@ -456,7 +376,7 @@ function LineupCarousel({ page }) {
   );
 }
 
-function PriceList({ prices }) {
+function PriceList({ prices, onAdd }) {
   const sections = [
     { id: 'kits', title: 'Kits', icon: PackageCheck, groups: prices.kits },
     { id: 'services', title: 'Servicios', icon: Wrench, groups: prices.services },
@@ -471,7 +391,7 @@ function PriceList({ prices }) {
   return (
     <section className="catalog-panel" aria-label="Catálogo y precios">
       <div className="catalog-heading">
-        <div><span>Catálogo actualizado</span><h2>Equipamiento y servicios</h2></div>
+        <div><span>Catálogo actualizado</span><h2>Elige tu equipamiento</h2></div>
         <strong>{selected.count} {selected.count === 1 ? 'opción' : 'opciones'}</strong>
       </div>
       <div className="catalog-tabs" role="tablist" aria-label="Categorías del catálogo">
@@ -481,12 +401,12 @@ function PriceList({ prices }) {
           return <button key={section.id} type="button" role="tab" aria-selected={active} className={active ? 'active' : ''} onClick={() => setActiveSection(section.id)}><Icon size={19} /><span>{section.title}</span><small>{section.count}</small></button>;
         })}
       </div>
-      <div className="catalog-content" role="tabpanel"><ModelGroups groups={selected.groups} type={selected.id} /></div>
+      <div className="catalog-content" role="tabpanel"><ModelGroups groups={selected.groups} type={selected.id} onAdd={onAdd} /></div>
     </section>
   );
 }
 
-function ModelGroups({ groups, type }) {
+function ModelGroups({ groups, type, onAdd }) {
   if (!groups.length) return <div className="catalog-empty">No hay opciones disponibles en esta categoría.</div>;
   return (
     <div className="model-groups">
@@ -500,8 +420,8 @@ function ModelGroups({ groups, type }) {
           </summary>
           <div className="model-content">
             {type === 'accessories'
-              ? <ItemCards items={group.items} />
-              : <><div className="catalog-entry-heading" aria-hidden="true"><span>{type === 'services' ? 'Servicio / paquete' : 'Kit de equipamiento'}</span><span>Precio total</span><span /></div>{group.items.map((item) => <ExpandableItem key={item.id} item={item} showItemPrices={type === 'services'} />)}</>}
+              ? <ItemCards items={group.items} onAdd={(item) => onAdd(item, group, type)} />
+              : <><div className="catalog-entry-heading" aria-hidden="true"><span>{type === 'services' ? 'Servicio / paquete' : 'Kit de equipamiento'}</span><span>Precio total</span><span /></div>{group.items.map((item) => <ExpandableItem key={item.id} item={item} showItemPrices={type === 'services'} onAdd={() => onAdd(item, group, type)} />)}</>}
           </div>
         </details>
       ))}
@@ -509,31 +429,32 @@ function ModelGroups({ groups, type }) {
   );
 }
 
-function ItemCards({ items, showPrices = true }) {
+function ItemCards({ items, showPrices = true, onAdd }) {
   return (
     <>
       <div className="component-heading"><span>Incluye</span><strong>{items.length} {items.length === 1 ? 'elemento' : 'elementos'}</strong></div>
       {items.length ? <div className="catalog-table-wrap"><table className="catalog-table">
         <caption className="visually-hidden">Productos incluidos{showPrices ? ' y precios' : ''}</caption>
-        <thead><tr><th scope="col">N.º</th><th scope="col">Producto / accesorio</th><th scope="col">Cantidad</th>{showPrices && <th scope="col">Precio</th>}</tr></thead>
-        <tbody>{items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} showPrice={showPrices} />)}</tbody>
+        <thead><tr><th scope="col">N.º</th><th scope="col">Producto / accesorio</th><th scope="col">Cantidad</th>{showPrices && <th scope="col">Precio</th>}{onAdd && <th scope="col">Cotizar</th>}</tr></thead>
+        <tbody>{items.map((item, index) => <CatalogItem key={item.id} item={item} index={index} showPrice={showPrices} onAdd={onAdd} />)}</tbody>
       </table></div> : <span className="component-empty">Sin productos asociados.</span>}
     </>
   );
 }
 
-function CatalogItem({ item, index, showPrice }) {
+function CatalogItem({ item, index, showPrice, onAdd }) {
   return (
     <tr>
       <td className="catalog-number">{String(index + 1).padStart(2, '0')}</td>
       <th scope="row" className="catalog-product">{item.name}</th>
       <td className="catalog-quantity"><span>{item.quantity || 1}</span></td>
-      {showPrice && <td className="catalog-price">{item.price || '—'}</td>}
+      {showPrice && <td className="catalog-price">{item.price || 'Por confirmar'}</td>}
+      {onAdd && <td><AddToQuote onClick={() => onAdd(item)} name={item.name} /></td>}
     </tr>
   );
 }
 
-function ExpandableItem({ item, showItemPrices }) {
+function ExpandableItem({ item, showItemPrices, onAdd }) {
   const description = item.description?.trim();
   const showDescription = description && description.localeCompare(item.name.trim(), 'es', { sensitivity: 'base' }) !== 0;
   return (
@@ -546,6 +467,7 @@ function ExpandableItem({ item, showItemPrices }) {
       <div className="entry-content">
         {showDescription && <p>{description}</p>}
         <ItemCards items={item.products} showPrices={showItemPrices} />
+        <AddToQuote onClick={onAdd} name={item.name} />
       </div>
     </details>
   );

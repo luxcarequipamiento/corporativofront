@@ -6,6 +6,8 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.47.0",
     "react": "latest",
     "react-dom": "latest",

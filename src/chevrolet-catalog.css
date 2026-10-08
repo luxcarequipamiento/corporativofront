@@ -1,0 +1,57 @@
+.chevrolet-catalog { min-width: 0; padding: clamp(18px, 2.4vw, 30px); border: 1px solid rgba(255,255,255,.14); border-radius: 18px; background: linear-gradient(140deg, #1a1b1e, #0b0d10 70%); }
+.chevrolet-catalog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
+.chevrolet-catalog-heading > div > span { color: var(--brand-accent); text-transform: uppercase; font-size: 10px; letter-spacing: 1.7px; font-weight: 600; }
+.chevrolet-catalog-heading h2 { margin: 8px 0; font-size: clamp(23px, 2.5vw, 33px); line-height: 1.25; letter-spacing: -.6px; }
+.chevrolet-catalog-heading p { margin: 0; color: #a7b0bd; font-size: 12px; line-height: 1.7; }
+.chevrolet-catalog-heading > strong { display: grid; gap: 2px; padding-top: 5px; color: #e9eaf0; font-size: 28px; text-align: right; }
+.chevrolet-catalog-heading small { color: #909ba9; font-size: 10px; font-weight: 400; }
+.chevrolet-models { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.chevrolet-models button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #111418; color: #abb6c4; font: inherit; font-size: 11px; transition: background .2s, border-color .2s; }
+.chevrolet-models button > span { padding: 2px 5px; border-radius: 4px; background: rgba(255,255,255,.06); color: #8893a2; font-size: 9px; }
+.chevrolet-models button:hover { border-color: #c4a651; color: #f6f6f7; }
+.chevrolet-models button.active { border-color: var(--brand-accent); color: #fff; background: #30291a; }
+.chevrolet-models button.active > span { color: #e4c76d; }
+.chevrolet-model-feature { position: relative; display: flex; align-items: center; min-height: 175px; padding: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: #000; }
+.chevrolet-model-feature > div { position: relative; z-index: 2; max-width: 58%; }
+.chevrolet-model-feature > div > span { display: flex; align-items: center; gap: 8px; color: var(--brand-accent); font-size: 11px; }
+.chevrolet-model-feature h3 { margin: 9px 0 6px; font-size: clamp(25px, 3vw, 38px); font-weight: 600; line-height: 1.1; }
+.chevrolet-model-feature p { margin: 0; font-size: 11px; color: #b6bfcc; }
+.chevrolet-model-feature > img { position: absolute; width: 100%; height: 100%; inset: 0; object-fit: cover; object-position: center; }
+.chevrolet-model-feature::after { position: absolute; content: ''; inset: 0; background: linear-gradient(90deg, #000 10%, rgba(0,0,0,.93) 30%, rgba(0,0,0,.15) 80%); }
+.chevrolet-catalog-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 22px; }
+.chevrolet-catalog-toolbar label { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; padding: 11px 13px; border: 1px solid rgba(255,255,255,.15); border-radius: 8px; color: #8e9aaa; background: #0b0e12; }
+.chevrolet-catalog-toolbar label:focus-within { border-color: var(--brand-accent); outline: 1px solid var(--brand-accent); }
+.chevrolet-catalog-toolbar input { width: 100%; min-width: 0; border: 0; outline: 0; color: #f3f5f8; background: transparent; font: inherit; font-size: 12px; }
+.chevrolet-catalog-toolbar > span { color: #b7bfcb; font-size: 10px; white-space: nowrap; }
+.chevrolet-results { margin: 14px 0; color: #8e9aaa; font-size: 10px; }
+.chevrolet-equipment-list { display: grid; gap: 8px; }
+.chevrolet-equipment { display: grid; grid-template-columns: 30px minmax(0,1fr) auto auto; align-items: center; gap: 14px; min-height: 80px; padding: 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(255,255,255,.025); transition: border-color .2s, background .2s; }
+.chevrolet-equipment:hover { background: rgba(255,255,255,.045); border-color: rgba(255,255,255,.2); }
+.chevrolet-equipment.selected { border-color: rgba(216,180,76,.3); background: rgba(216,180,76,.045); }
+.chevrolet-equipment-index { color: #7e8999; font-size: 10px; font-variant-numeric: tabular-nums; }
+.chevrolet-equipment-name { min-width: 0; }
+.chevrolet-equipment h4 { margin: 0 0 5px; color: #f2f4f8; font-size: 12px; font-weight: 500; line-height: 1.5; overflow-wrap: anywhere; }
+.chevrolet-equipment-name > span { display: flex; align-items: center; gap: 4px; color: #8e9aaa; font-size: 9px; }
+.chevrolet-equipment.selected .chevrolet-equipment-name > span { color: #d8b44c; }
+.chevrolet-equipment > strong { white-space: nowrap; font-size: 13px; font-variant-numeric: tabular-nums; }
+.chevrolet-equipment > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 8px 10px; border: 1px solid rgba(216,180,76,.5); border-radius: 6px; background: rgba(216,180,76,.08); color: #e5cc87; font: inherit; font-size: 10px; }
+.chevrolet-equipment > button:hover { color: #101010; background: #d8b44c; }
+.chevrolet-catalog button:focus-visible { outline: 2px solid var(--brand-accent); outline-offset: 3px; }
+.chevrolet-no-results { padding: 32px 16px; text-align: center; color: #8e9aaa; border: 1px dashed rgba(255,255,255,.14); border-radius: 10px; }
+.chevrolet-no-results p { font-size: 12px; }
+.chevrolet-no-results button { display: inline-flex; align-items: center; gap: 8px; padding: 8px; border: 0; background: transparent; color: #d8b44c; font: inherit; font-size: 12px; }
+@media (max-width: 640px) {
+  .chevrolet-catalog { padding: 16px; border-radius: 12px; }
+  .chevrolet-catalog-heading { gap: 12px; }
+  .chevrolet-catalog-heading h2 { font-size: 23px; }
+  .chevrolet-catalog-heading > strong { font-size: 22px; }
+  .chevrolet-models { gap: 6px; }
+  .chevrolet-models button { padding: 8px 9px; font-size: 10px; }
+  .chevrolet-model-feature { min-height: 160px; padding: 18px; }
+  .chevrolet-catalog-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+  .chevrolet-equipment { grid-template-columns: minmax(0,1fr) auto; gap: 10px; padding: 12px; }
+  .chevrolet-equipment-index { display: none; }
+  .chevrolet-equipment-name { grid-column: 1 / -1; }
+  .chevrolet-equipment > strong { font-size: 14px; }
+  .chevrolet-equipment > button { min-height: 40px; padding: 9px 14px; font-size: 11px; }
+}

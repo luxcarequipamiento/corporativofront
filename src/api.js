@@ -157,9 +157,15 @@ export const sendAdminMessage = (conversationId, text, file) => {
   });
 };
 
-export async function getCatalog(slug, { onRetry } = {}) {
+export async function getCatalog(slug, { onRetry, section } = {}) {
   const safeSlug = encodeURIComponent(slug);
   const loadSection = (section, path) => requestWithRetry(path, {}, (retry) => onRetry?.({ section, ...retry }));
+  if (section) {
+    const paths = { kits: 'kits', accessories: 'accesorios', services: 'servicios-paquetes' };
+    const keys = { kits: 'kits', accessories: 'productos', services: 'servicios_paquetes' };
+    const result = await loadSection(section, `/${safeSlug}/${paths[section]}`);
+    return { [keys[section]]: result.data || [] };
+  }
   const [kits, accessories, servicePackages] = await Promise.all([
     loadSection('kits', `/${safeSlug}/kits`),
     loadSection('accesorios', `/${safeSlug}/accesorios`),
@@ -171,3 +177,6 @@ export async function getCatalog(slug, { onRetry } = {}) {
     servicios_paquetes: servicePackages.data || []
   };
 }
+
+export const getAccessoryModels = (slug) => requestWithRetry(`/${encodeURIComponent(slug)}/accesorios/modelos`).then(result => result.data || []);
+export const getModelAccessories = (slug, modelId) => requestWithRetry(`/${encodeURIComponent(slug)}/accesorios?modelo=${encodeURIComponent(modelId)}`).then(result => result.data || []);

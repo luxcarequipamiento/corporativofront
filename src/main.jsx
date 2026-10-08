@@ -7,7 +7,7 @@ import {
 import { clearSession, getAccessToken, getCatalog, getMe, login } from './api.js';
 import { AdminMessaging, ClientMessaging } from './chat.jsx';
 import './styles.css';
-import { ChevroletCatalog } from './chevrolet-catalog.jsx';
+import { ProgressiveChevroletCatalog } from './chevrolet-catalog.jsx';
 import { catalogToPrices } from './catalog.js';
 import { Quotation, AddToQuote } from './quotation.jsx';
 import { ClientFooter } from './client-footer.jsx';
@@ -248,6 +248,7 @@ function Login({ onLogin }) {
 
 function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
   const [showPrices, setShowPrices] = useState(false);
+  const [catalogStarted, setCatalogStarted] = useState(false);
   const [quoteItems, setQuoteItems] = useState([]);
   const addToQuote = (item, group, type) => {
     const key = `${type}:${group.id}:${item.id}`;
@@ -259,28 +260,31 @@ function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
   const [catalogError, setCatalogError] = useState('');
   const [catalogRetry, setCatalogRetry] = useState('');
   const [catalogReload, setCatalogReload] = useState(0);
+  const [catalogSection, setCatalogSection] = useState('kits');
+  const sectionKey = { kits: 'kits', accessories: 'productos', services: 'servicios_paquetes' }[catalogSection];
+  const sectionLoaded = !!catalog && Object.hasOwn(catalog, sectionKey);
 
   useEffect(() => {
-    if (!showPrices || catalog) return undefined;
+    if (page.id === 'chevrolet' || !showPrices || sectionLoaded) return undefined;
     let active = true;
     setCatalogError('');
     setCatalogRetry('');
     getCatalog(page.id, {
+      section: catalogSection,
       onRetry: ({ section }) => { if (active) setCatalogRetry(section); }
     })
-      .then((result) => { if (active) setCatalog(result); })
+      .then((result) => { if (active) setCatalog(current => ({ ...current, ...result })); })
       .catch(() => { if (active) setCatalogError('No fue posible cargar el catálogo.'); })
       .finally(() => { if (active) setCatalogRetry(''); });
     return () => { active = false; };
-  }, [page.id, showPrices, catalogReload]);
+  }, [page.id, showPrices, catalogReload, catalogSection]);
 
   const retryCatalog = () => {
-    setCatalog(null);
     setCatalogError('');
     setCatalogReload((value) => value + 1);
   };
 
-  const prices = catalog ? catalogToPrices(catalog) : null;
+  const prices = catalogToPrices(catalog || {});
   return (
     <main className={`app-shell app-shell--${page.id}`} style={{ '--brand-accent': page.accent }}>
       <header className="topbar">
@@ -301,7 +305,7 @@ function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
           <span><small>Documento corporativo</small>Descarga Brochure</span>
           <ArrowRight size={20} />
         </a>
-        <button className="action-button" type="button" onClick={() => setShowPrices((value) => !value)} aria-expanded={showPrices}>
+        <button className="action-button" type="button" onClick={() => { setCatalogStarted(true); setShowPrices((value) => !value); }} aria-expanded={showPrices}>
           <span className="action-icon"><ShoppingBag size={22} /></span>
           <span><small>Catálogo y cotizador</small>{showPrices ? 'Ocultar catálogo' : 'Arma cotización'}</span>
           <ArrowRight size={20} />
@@ -312,20 +316,8 @@ function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
           <ArrowRight size={20} />
         </button>
       </section>
-      {showPrices && !prices && !catalogError && (
-        <div className="catalog-status" role="status" aria-live="polite">
-          <LoaderCircle className="button-spinner" size={21} />
-          <span>{catalogRetry ? `Reconectando ${catalogRetry}...` : 'Cargando lista de precios...'}</span>
-        </div>
-      )}
-      {showPrices && catalogError && (
-        <div className="catalog-status error" role="alert">
-          <span>{catalogError}</span>
-          <button type="button" onClick={retryCatalog}><RefreshCw size={18} /> Reintentar</button>
-        </div>
-      )}
-      {prices && <div className="quotation-layout" hidden={!showPrices}>
-        {page.id === 'chevrolet' ? <ChevroletCatalog prices={prices} onAdd={addToQuote} quoteItems={quoteItems} /> : <PriceList prices={prices} onAdd={addToQuote} />}
+      {catalogStarted && <div className="quotation-layout" hidden={!showPrices}>
+        {page.id === 'chevrolet' ? <ProgressiveChevroletCatalog onAdd={addToQuote} quoteItems={quoteItems} /> : <PriceList prices={prices} onAdd={addToQuote} activeSection={catalogSection} onSectionChange={section => { setCatalogError(''); setCatalogRetry(''); setCatalogSection(section); }} loading={!sectionLoaded} loaded={catalog} error={catalogError} retryLabel={catalogRetry} onRetry={retryCatalog} />}
         <Quotation items={quoteItems} setItems={setQuoteItems} page={page} nombre={nombre} advisor={nombreCompleto} />
       </div>}
       <LineupCarousel page={page} />
@@ -376,7 +368,7 @@ function LineupCarousel({ page }) {
   );
 }
 
-function PriceList({ prices, onAdd }) {
+function PriceList({ prices, onAdd, activeSection, onSectionChange, loading, loaded, error, retryLabel, onRetry }) {
   const sections = [
     { id: 'kits', title: 'Kits', icon: PackageCheck, groups: prices.kits },
     { id: 'services', title: 'Servicios', icon: Wrench, groups: prices.services },
@@ -385,7 +377,6 @@ function PriceList({ prices, onAdd }) {
     ...section,
     count: section.groups.reduce((total, group) => total + group.items.length, 0)
   }));
-  const [activeSection, setActiveSection] = useState(() => sections.find((section) => section.count)?.id || 'kits');
   const selected = sections.find((section) => section.id === activeSection) || sections[0];
 
   return (
@@ -398,10 +389,11 @@ function PriceList({ prices, onAdd }) {
         {sections.map((section) => {
           const Icon = section.icon;
           const active = section.id === selected.id;
-          return <button key={section.id} type="button" role="tab" aria-selected={active} className={active ? 'active' : ''} onClick={() => setActiveSection(section.id)}><Icon size={19} /><span>{section.title}</span><small>{section.count}</small></button>;
+          const key = { kits: 'kits', services: 'servicios_paquetes', accessories: 'productos' }[section.id];
+          return <button key={section.id} type="button" role="tab" aria-selected={active} className={active ? 'active' : ''} onClick={() => onSectionChange(section.id)}><Icon size={19} /><span>{section.title}</span><small>{loaded && Object.hasOwn(loaded, key) ? section.count : '—'}</small></button>;
         })}
       </div>
-      <div className="catalog-content" role="tabpanel"><ModelGroups groups={selected.groups} type={selected.id} onAdd={onAdd} /></div>
+      <div className="catalog-content" role="tabpanel">{error ? <div className="catalog-status error" role="alert">{error}<button onClick={onRetry}>Reintentar</button></div> : loading ? <div className="catalog-status" role="status"><LoaderCircle className="button-spinner" size={21} />{retryLabel ? 'Reconectando...' : 'Cargando equipamiento...'}</div> : <ModelGroups groups={selected.groups} type={selected.id} onAdd={onAdd} />}</div>
     </section>
   );
 }

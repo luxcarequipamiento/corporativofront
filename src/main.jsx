@@ -298,12 +298,12 @@ function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
       <section className="action-row" aria-label="Acciones principales">
         <a className="action-button" href={page.brochure} download>
           <span className="action-icon"><Download size={22} /></span>
-          <span><small>Documento corporativo</small>Descargar brochure</span>
+          <span><small>Documento corporativo</small>Descarga Brochure</span>
           <ArrowRight size={20} />
         </a>
         <button className="action-button" type="button" onClick={() => setShowPrices((value) => !value)} aria-expanded={showPrices}>
           <span className="action-icon"><ShoppingBag size={22} /></span>
-          <span><small>Catálogo y cotizador</small>{showPrices ? 'Ocultar catálogo' : 'Armar cotización'}</span>
+          <span><small>Catálogo y cotizador</small>{showPrices ? 'Ocultar catálogo' : 'Arma cotización'}</span>
           <ArrowRight size={20} />
         </button>
         <button className="action-button" type="button" onClick={onOpenChat}>

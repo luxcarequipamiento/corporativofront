@@ -17,7 +17,7 @@ export function ChevroletCatalog({ prices, onAdd, quoteItems }) {
   const count = models.reduce((total, model) => total + model.items.length, 0);
   return (
     <section className="chevrolet-catalog" aria-labelledby="chevrolet-catalog-title">
-      <div className="chevrolet-catalog-heading"><div><span>Equipamiento Chevrolet</span><h2 id="chevrolet-catalog-title">Tu modelo. Tu configuración.</h2><p>Explora las opciones para tu vehículo y agrégalas a tu cotización.</p></div><strong>{count}<small>opciones</small></strong></div>
+      <div className="chevrolet-catalog-heading"><div><span>Equipamiento Chevrolet</span><h2 id="chevrolet-catalog-title">Tu modelo. Tu mejor versión.</h2><p>Explora las opciones para tu vehículo y agrégalas a tu cotización.</p></div><strong>{count}<small>opciones</small></strong></div>
       <div className="chevrolet-models" role="group" aria-label="Seleccionar modelo Chevrolet">
         {models.map((model) => <button type="button" key={model.id} aria-pressed={current?.id === model.id} className={current?.id === model.id ? 'active' : ''} onClick={() => { setActiveId(model.id); setSearch(''); }}>{titleOf(model.name)}<span>{model.items.length}</span></button>)}
       </div>

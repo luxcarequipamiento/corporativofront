@@ -19,7 +19,7 @@
   color: #fff;
   background: #e31b2f;
   font-family: Sora, sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -53,7 +53,7 @@
 .thread-person strong {
   overflow: hidden;
   color: #f2f5f8;
-  font-size: 15px;
+  font-size: 16px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -64,7 +64,7 @@
   gap: 6px;
   overflow: hidden;
   color: #8f9aa7;
-  font-size: 12px;
+  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -123,7 +123,7 @@
   border-radius: 4px;
   color: #84909d;
   background: #111820;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -159,7 +159,7 @@
 .message-bubble p {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -170,7 +170,7 @@
   gap: 4px;
   margin-top: 4px;
   color: #7f8a96;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .message-row.outgoing .message-time svg { color: #df5261; }
@@ -211,8 +211,8 @@
 }
 
 .message-file div { display: grid; min-width: 0; }
-.message-file strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.message-file small { color: #83909e; font-size: 9px; }
+.message-file strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.message-file small { color: #83909e; font-size: 10px; }
 
 .message-image {
   display: grid;
@@ -241,7 +241,7 @@
   padding: 7px 8px;
   overflow: hidden;
   color: #bdc6d0;
-  font-size: 10px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -269,7 +269,7 @@
   outline: none;
   color: #f1f4f7;
   background: #0a0f15;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .composer-row > input:focus { border-color: rgba(227,27,47,.7); }
@@ -312,7 +312,7 @@
   backdrop-filter: blur(2px);
 }
 
-.conversation-loading small { font-size: 11px; }
+.conversation-loading small { font-size: 12px; }
 
 .chat-loading-spinner {
   width: 30px;
@@ -326,7 +326,7 @@
 .composer-error {
   margin: 0 0 8px;
   color: #ff7b88;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .conversation-state {
@@ -337,7 +337,7 @@
   border-radius: 5px;
   color: #8f9ba8;
   background: #111820;
-  font-size: 12px;
+  font-size: 13px;
   text-align: center;
 }
 
@@ -354,7 +354,7 @@
   border-radius: 5px;
   color: #c7d0da;
   background: rgba(255,255,255,.035);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .pending-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -387,10 +387,10 @@
 .admin-brand > img { width: 146px; height: 42px; object-fit: contain; object-position: left; }
 .admin-brand > span { width: 1px; height: 32px; background: rgba(255,255,255,.16); }
 .admin-brand div, .admin-account > span { display: grid; }
-.admin-brand small, .admin-account small { color: #75808d; font-size: 10px; text-transform: uppercase; }
-.admin-brand strong { font-family: Sora, sans-serif; font-size: 15px; text-transform: uppercase; }
+.admin-brand small, .admin-account small { color: #75808d; font-size: 11px; text-transform: uppercase; }
+.admin-brand strong { font-family: Sora, sans-serif; font-size: 16px; text-transform: uppercase; }
 .admin-account { text-align: right; }
-.admin-account strong { color: #dce3eb; font-size: 12px; }
+.admin-account strong { color: #dce3eb; font-size: 13px; }
 .admin-account button { border: 1px solid rgba(255,255,255,.1); }
 
 .client-page-brand { gap: 14px; }
@@ -442,9 +442,9 @@
   padding: 22px 20px 14px;
 }
 
-.inbox-heading span { color: #e31b2f; font-size: 10px; font-weight: 700; text-transform: uppercase; }
-.inbox-heading h1 { margin: 3px 0 0; font-family: Sora, sans-serif; font-size: 20px; }
-.inbox-heading > strong { display: grid; place-items: center; min-width: 28px; height: 26px; padding: 0 7px; border-radius: 4px; color: #fff; background: #e31b2f; font-size: 11px; }
+.inbox-heading span { color: #e31b2f; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.inbox-heading h1 { margin: 3px 0 0; font-family: Sora, sans-serif; font-size: 21px; }
+.inbox-heading > strong { display: grid; place-items: center; min-width: 28px; height: 26px; padding: 0 7px; border-radius: 4px; color: #fff; background: #e31b2f; font-size: 12px; }
 
 .conversation-search {
   display: grid;
@@ -460,7 +460,7 @@
 }
 
 .conversation-search:focus-within { border-color: rgba(227,27,47,.6); }
-.conversation-search input { min-width: 0; height: 40px; padding: 0; border: 0; outline: 0; color: #eaf0f5; background: transparent; font-size: 12px; }
+.conversation-search input { min-width: 0; height: 40px; padding: 0; border: 0; outline: 0; color: #eaf0f5; background: transparent; font-size: 13px; }
 
 .conversation-list { overflow-y: auto; border-top: 1px solid rgba(255,255,255,.07); }
 
@@ -483,11 +483,11 @@
 .conversation-list > button.active { background: rgba(255,255,255,.065); box-shadow: inset 3px 0 0 #e31b2f; }
 .conversation-preview { display: grid; gap: 5px; min-width: 0; }
 .conversation-preview > span { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
-.conversation-preview strong { overflow: hidden; color: #e6ebf0; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-.conversation-preview time { flex: 0 0 auto; color: #697582; font-size: 9px; }
-.conversation-preview small { overflow: hidden; color: #84909d; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.conversation-preview b { display: grid; flex: 0 0 auto; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; color: #fff; background: #e31b2f; font-size: 9px; }
-.conversation-empty { padding: 30px 18px; color: #788491; font-size: 12px; text-align: center; }
+.conversation-preview strong { overflow: hidden; color: #e6ebf0; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-preview time { flex: 0 0 auto; color: #697582; font-size: 10px; }
+.conversation-preview small { overflow: hidden; color: #84909d; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.conversation-preview b { display: grid; flex: 0 0 auto; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; color: #fff; background: #e31b2f; font-size: 10px; }
+.conversation-empty { padding: 30px 18px; color: #788491; font-size: 13px; text-align: center; }
 
 .admin-thread {
   display: grid;
@@ -507,8 +507,8 @@
   text-align: center;
 }
 
-.admin-thread.empty-thread strong { color: #c7d0d9; font-size: 15px; }
-.admin-thread.empty-thread span { max-width: 360px; font-size: 12px; }
+.admin-thread.empty-thread strong { color: #c7d0d9; font-size: 16px; }
+.admin-thread.empty-thread span { max-width: 360px; font-size: 13px; }
 
 .admin-thread .messages-scroll { padding: 24px clamp(20px, 5vw, 72px); }
 .admin-thread .message-composer { padding-right: clamp(16px, 5vw, 72px); padding-left: clamp(16px, 5vw, 72px); }

@@ -18,7 +18,7 @@ export function ClientFooter({ page, onNavigate, navigationLabel }) {
         </div>
         <nav className="client-footer-links" aria-label={`Recursos para ${page.name}`}>
           <span>Estamos contigo</span>
-          <a href={page.brochure} download><Download size={17} aria-hidden="true" /> Descargar brochure</a>
+          <a href={page.brochure} download><Download size={17} aria-hidden="true" /> Descarga Brochure</a>
           <button type="button" onClick={onNavigate}>{navigationLabel}<ArrowRight size={17} aria-hidden="true" /></button>
         </nav>
       </div>

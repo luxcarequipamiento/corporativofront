@@ -10,6 +10,7 @@ import './styles.css';
 import { ProgressiveChevroletCatalog } from './chevrolet-catalog.jsx';
 import { catalogToPrices } from './catalog.js';
 import { Quotation, AddToQuote } from './quotation.jsx';
+import { SINGLE_MODEL_MESSAGE } from './quote-utils.js';
 import { ClientFooter } from './client-footer.jsx';
 import { allyLabel } from './ally-label.js';
 
@@ -250,7 +251,13 @@ function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
   const [showPrices, setShowPrices] = useState(false);
   const [catalogStarted, setCatalogStarted] = useState(false);
   const [quoteItems, setQuoteItems] = useState([]);
+  const [modelNotice, setModelNotice] = useState('');
   const addToQuote = (item, group, type) => {
+    if (quoteItems.some(entry => entry.model !== group.name)) {
+      setModelNotice(`${SINGLE_MODEL_MESSAGE} Modelo de tu cotización: ${quoteItems[0].model}.`);
+      return;
+    }
+    setModelNotice('');
     const key = `${type}:${group.id}:${item.id}`;
     setQuoteItems((current) => current.some((entry) => entry.key === key)
       ? current.map((entry) => entry.key === key ? { ...entry, quantity: Math.min(999, entry.quantity + 1) } : entry)
@@ -318,7 +325,7 @@ function CorporatePage({ page, nombre, nombreCompleto, onLogout, onOpenChat }) {
       </section>
       {catalogStarted && <div className="quotation-layout" hidden={!showPrices}>
         {page.id === 'chevrolet' ? <ProgressiveChevroletCatalog onAdd={addToQuote} quoteItems={quoteItems} /> : <PriceList prices={prices} onAdd={addToQuote} activeSection={catalogSection} onSectionChange={section => { setCatalogError(''); setCatalogRetry(''); setCatalogSection(section); }} loading={!sectionLoaded} loaded={catalog} error={catalogError} retryLabel={catalogRetry} onRetry={retryCatalog} />}
-        <Quotation items={quoteItems} setItems={setQuoteItems} page={page} nombre={nombre} advisor={nombreCompleto} />
+        <Quotation items={quoteItems} setItems={update => { setModelNotice(''); setQuoteItems(update); }} modelNotice={modelNotice} page={page} nombre={nombre} advisor={nombreCompleto} />
       </div>}
       <LineupCarousel page={page} />
     </main>

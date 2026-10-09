@@ -1,46 +1,71 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Download, FileText, Plus, Trash2, LoaderCircle } from 'lucide-react';
-import { categoryLabel, formatMoney, normalizeQuantity, quoteTotals, groupQuoteItems } from './quote-utils.js';
+import { categoryLabel, formatMoney, normalizeQuantity, quoteTotals, groupQuoteItems, hasMultipleModels, SINGLE_MODEL_MESSAGE } from './quote-utils.js';
 import './quotation.css';
+import { saveOrder } from './api.js';
 
 export function AddToQuote({ onClick, name }) {
   return <button type="button" className="quote-add" onClick={onClick} aria-label={`Agregar ${name} a la cotización`}><Plus size={16} aria-hidden="true" /> Agregar</button>;
 }
 
-export function Quotation({ items, setItems, page, nombre, advisor }) {
-  const [details, setDetails] = useState({ contact: nombre || '', company: page.name, vehicle: '', notes: '' });
-  const [reference, setReference] = useState(() => `COT-${Date.now().toString(36).toUpperCase()}`);
+export function Quotation({ items, setItems, page, nombre, advisor, modelNotice }) {
+  const [details, setDetails] = useState({ contact: nombre || '', company: page.name, vehicle: '', vin: '', notes: '' });
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState('');
+  const [orderMessage, setOrderMessage] = useState('');
+  const registeredOrders = useRef(new Map());
   const { totals, pending } = quoteTotals(items);
+  const subtotals = [
+    { label: 'Subtotal Servicios', ...quoteTotals(items.filter(item => item.type === 'services')) },
+    { label: 'Subtotal Accesorios', ...quoteTotals(items.filter(item => item.type !== 'services')) }
+  ];
   const groups = groupQuoteItems(items);
+  const missingDetails = [!details.vehicle.trim() && 'Vehículo', !details.vin.trim() && 'Nº de Serie o VIN'].filter(Boolean);
   const updateField = (field, value) => setDetails((current) => ({ ...current, [field]: value }));
-  const download = async () => {
+  const download = async (documentType) => {
     setError('');
+    setOrderMessage('');
+    if (hasMultipleModels(items)) { setError(SINGLE_MODEL_MESSAGE); return; }
     setExporting(true);
     try {
-      const { buildQuotationPdf, loadQuotationLogos } = await import('./quotation-pdf.js');
+      const { buildOrderPdf, loadQuotationLogos } = await import('./quotation-pdf.js');
       const logos = await loadQuotationLogos(page);
-      const doc = buildQuotationPdf({ items, page, details, reference, advisor, logos });
-      doc.save(`${reference}-${page.id}.pdf`);
-    } catch {
-      setError('No fue posible generar el PDF. Intenta descargarlo nuevamente.');
+      const payload = { items: items.map(item => ({ id: item.id, model: item.model, type: item.type, quantity: item.quantity, unitPrice: item.unitPrice, currency: item.currency })),
+        details: { vehicle: details.vehicle, vin: details.vin, notes: details.notes } };
+      const signature = JSON.stringify(payload);
+      if (!registeredOrders.current.has(signature)) registeredOrders.current.set(signature, { requestId: crypto.randomUUID(), documents: {} });
+      const registration = registeredOrders.current.get(signature);
+      let saved = registration.documents[documentType];
+      if (!saved) {
+        const response = await saveOrder({ ...payload, requestId: registration.requestId, documentType });
+        saved = response.data;
+        registration.documents[documentType] = saved;
+      }
+      const doc = buildOrderPdf({ items: saved.conceptos, page, details: saved.datos, reference: saved.numero, advisor: saved.datos.asesor, logos, documentType, date: new Date(saved.creado_en) });
+      doc.save(`${documentType === 'services' ? 'ORDEN-SERVICIO' : 'ORDEN-COMPRA'}-${saved.numero}-${page.id}.pdf`);
+      setOrderMessage(`${documentType === 'services' ? 'Orden de servicio' : 'Orden de compra'} registrada: ${saved.numero}.`);
+    } catch (requestError) {
+      setError(requestError.message || 'No fue posible generar el PDF. Intenta descargarlo nuevamente.');
     } finally { setExporting(false); }
   };
   const clear = () => {
     setItems([]);
-    setReference(`COT-${Date.now().toString(36).toUpperCase()}`);
+    registeredOrders.current.clear();
+    setOrderMessage('');
+    setDetails({ contact: nombre || '', company: page.name, vehicle: '', vin: '', notes: '' });
     setError('');
   };
   return (
     <aside className="quote-panel" aria-labelledby="quote-title">
-      <div className="quote-heading"><FileText size={22} aria-hidden="true" /><div><span>Cotización {page.name}</span><h2 id="quote-title">Tu orden de servicio</h2></div></div>
+      <div className="quote-heading"><FileText size={22} aria-hidden="true" /><div><span>Cotización {page.name}</span><h2 id="quote-title">Tu cotización</h2></div></div>
+      <button className="quote-clear" type="button" onClick={clear} disabled={exporting || (!items.length && !details.vehicle && !details.vin && !details.notes)}><Trash2 size={15} aria-hidden="true" /> Vaciar todo</button>
       <p className="quote-intro">Elige del catálogo y arma el equipamiento de tu vehículo.</p>
+      {modelNotice && <p className="quote-notice" role="alert">{modelNotice}</p>}
       <div className="quote-fields">
         <label>Asesor responsable<input value={advisor || nombre || 'Sin especificar'} readOnly /></label>
-        <label>Contacto<input maxLength={100} value={details.contact} onChange={(e) => updateField('contact', e.target.value)} autoComplete="name" /></label>
         <label>Empresa<input value={page.name} readOnly /></label>
-        <label>Vehículo / placa<input maxLength={100} value={details.vehicle} onChange={(e) => updateField('vehicle', e.target.value)} placeholder="Modelo y placa (opcional)" /></label>
+        <label>Vehículo<input maxLength={100} value={details.vehicle} onChange={(e) => updateField('vehicle', e.target.value)} placeholder="Vehículo (opcional)" /></label>
+        <label>Nº de Serie o VIN<input maxLength={100} value={details.vin} onChange={(e) => updateField('vin', e.target.value)} placeholder="Serie o VIN (opcional)" /></label>
       </div>
       <div className="quote-selection" aria-live="polite" aria-atomic="false">
         {!items.length ? <div className="quote-empty"><ShoppingPlaceholder /><p>Tu orden está vacía.</p><span>Usa «Agregar» en un kit, servicio o accesorio.</span></div> : groups.map((group) => (
@@ -71,11 +96,14 @@ export function Quotation({ items, setItems, page, nombre, advisor }) {
         ))}
       </div>
       <label className="quote-notes">Observaciones<textarea maxLength={1200} rows={2} value={details.notes} onChange={(e) => updateField('notes', e.target.value)} placeholder="Detalles de instalación o requerimientos adicionales" /></label>
+      <dl className="quote-subtotals" aria-live="polite">{subtotals.map(subtotal => <div key={subtotal.label}><dt>{subtotal.label}{subtotal.pending > 0 && <small>Precios confirmados · {subtotal.pending} pendiente(s)</small>}</dt><dd>{subtotal.totals.length ? subtotal.totals.map(total => <span key={total.currency}>{formatMoney(total.amount, total.currency)}</span>) : subtotal.pending ? 'Por confirmar' : formatMoney(0, totals[0]?.currency || items[0]?.currency || (page.id === 'chevrolet' ? 'USD' : 'PEN'))}</dd></div>)}</dl>
       <div className="quote-totals" aria-live="polite"><span>{pending ? 'Total general confirmado' : 'Total general'}</span>{totals.map((total) => <strong key={total.currency}>{formatMoney(total.amount, total.currency)}</strong>)}{!totals.length && <strong>{items.length ? 'Por confirmar' : '—'}</strong>}{pending > 0 && <small>{pending} {pending === 1 ? 'concepto pendiente' : 'conceptos pendientes'} de precio.</small>}</div>
       <p className="quote-disclaimer">Cotización preliminar sujeta a confirmación de Lux Car. La descarga no confirma una orden de trabajo.</p>
+      {items.length > 0 && (missingDetails.length > 0 || !details.notes.trim()) && <p className="quote-notice" role="status">{missingDetails.length > 0 && `Antes de descargar, recuerda completar: ${missingDetails.join(' y ')}. `}{!details.notes.trim() && 'Agrega una observación si corresponde.'}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="quote-download" type="button" disabled={!items.length || exporting} onClick={download}>{exporting ? <LoaderCircle className="button-spinner" size={18} /> : <Download size={18} />}{exporting ? 'Generando PDF...' : 'Descargar cotización PDF'}</button>
-      {items.length > 0 && <button className="quote-clear" type="button" onClick={clear} disabled={exporting}>Vaciar orden</button>}
+      {orderMessage && <p className="quote-intro" role="status">{orderMessage}</p>}
+      <button className="quote-download" type="button" disabled={!items.some(item => item.type !== 'services') || exporting} onClick={() => download('purchase')}><Download size={18} />Descargar orden de compra</button>
+      <button className="quote-download" type="button" disabled={!items.some(item => item.type === 'services') || exporting} onClick={() => download('services')}>{exporting ? <LoaderCircle className="button-spinner" size={18} /> : <Download size={18} />}Descargar orden de servicio</button>
     </aside>
   );
 }

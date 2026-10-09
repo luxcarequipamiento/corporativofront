@@ -80,6 +80,7 @@ export async function login(email, password) {
 }
 
 export const getMe = () => request('/auth/me');
+export const saveOrder = (body) => request('/ordenes', { method: 'POST', body: JSON.stringify(body), timeoutMs: 45000 });
 
 const FILE_MIME_TYPES = {
   jpg: 'image/jpeg',
@@ -163,20 +164,30 @@ export async function getCatalog(slug, { onRetry, section } = {}) {
   if (section) {
     const paths = { kits: 'kits', accessories: 'accesorios', services: 'servicios-paquetes' };
     const keys = { kits: 'kits', accessories: 'productos', services: 'servicios_paquetes' };
+    if (section === 'services') {
+      const [products, packages] = await Promise.all([
+        loadSection(section, `/${safeSlug}/servicios`),
+        loadSection(section, `/${safeSlug}/servicios-paquetes`)
+      ]);
+      return { servicios: products.data || [], servicios_paquetes: packages.data || [] };
+    }
     const result = await loadSection(section, `/${safeSlug}/${paths[section]}`);
     return { [keys[section]]: result.data || [] };
   }
-  const [kits, accessories, servicePackages] = await Promise.all([
+  const [kits, accessories, servicePackages, services] = await Promise.all([
     loadSection('kits', `/${safeSlug}/kits`),
     loadSection('accesorios', `/${safeSlug}/accesorios`),
-    loadSection('servicios', `/${safeSlug}/servicios-paquetes`)
+    loadSection('servicios', `/${safeSlug}/servicios-paquetes`),
+    loadSection('servicios', `/${safeSlug}/servicios`)
   ]);
   return {
     kits: kits.data || [],
     productos: accessories.data || [],
-    servicios_paquetes: servicePackages.data || []
+    servicios_paquetes: servicePackages.data || [],
+    servicios: services.data || []
   };
 }
 
 export const getAccessoryModels = (slug) => requestWithRetry(`/${encodeURIComponent(slug)}/accesorios/modelos`).then(result => result.data || []);
 export const getModelAccessories = (slug, modelId) => requestWithRetry(`/${encodeURIComponent(slug)}/accesorios?modelo=${encodeURIComponent(modelId)}`).then(result => result.data || []);
+export const getModelServices = (slug, modelId) => requestWithRetry(`/${encodeURIComponent(slug)}/servicios?modelo=${encodeURIComponent(modelId)}`).then(result => result.data || []);

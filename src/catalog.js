@@ -55,7 +55,12 @@ export function catalogToPrices(catalog) {
       model: modelOf(item),
       item: { id: item.id_producto || item.id, name: item.nombre, ...priceData(item.precio_venta, item.moneda) }
     }))),
-    services: groupByModel((catalog.servicios_paquetes || []).flatMap((servicePackage) => {
+    services: groupByModel([
+      ...(catalog.servicios || []).map(service => ({
+        model: modelOf(service),
+        item: { id: `product-${service.id_producto || service.id}`, name: service.nombre, ...priceData(service.precio_venta, service.moneda), products: [] }
+      })),
+      ...(catalog.servicios_paquetes || []).flatMap((servicePackage) => {
       const productsByModel = new Map();
       (servicePackage.productos || []).forEach((product) => {
         const model = modelOf(product);
@@ -82,7 +87,6 @@ export function catalogToPrices(catalog) {
           }))
         }
       }));
-    }))
+    })])
   };
 }
-

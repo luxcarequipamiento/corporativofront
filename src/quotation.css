@@ -81,3 +81,14 @@
 }
 .quote-selection { grid-template-columns: minmax(0, 1fr); overflow-x: hidden; }
 .quote-table-scroll { width: 100%; max-width: 100%; min-width: 0; }
+
+.quote-notice { margin: 10px 0; padding: 10px 12px; border: 1px solid rgba(229,199,117,.3); border-radius: 6px; background: rgba(229,199,117,.07); color: #e5c775; font-size: 11px; line-height: 1.6; }
+
+.quote-clear { display: inline-flex; align-items: center; justify-content: center; gap: 7px; margin: 8px 0; padding: 8px 12px; border: 1px solid rgba(255,119,132,.25); border-radius: 6px; color: #ff7784; background: rgba(255,119,132,.06); }
+.quote-clear:disabled { opacity: .45; cursor: default; }
+
+.quote-subtotals { display: grid; gap: 9px; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); font-size: 12px; }
+.quote-subtotals > div { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.quote-subtotals dt { color: #aab4c1; }
+.quote-subtotals dt small { display: block; font-size: 10px; color: #e5c775; }
+.quote-subtotals dd { display: grid; gap: 3px; margin: 0; color: #f3f5f8; text-align: right; font-variant-numeric: tabular-nums; }

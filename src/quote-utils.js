@@ -1,4 +1,6 @@
 export const categoryLabel = { kits: 'Kit', accessories: 'Accesorio', services: 'Servicio' };
+export const SINGLE_MODEL_MESSAGE = 'Cada orden de compra o de servicio debe corresponder a un único modelo de vehículo. Para cotizar otro modelo, vacía la cotización actual y crea una nueva.';
+export const hasMultipleModels = (items) => new Set(items.map(item => item.model)).size > 1;
 export const formatMoney = (cents, currency = 'PEN') => new Intl.NumberFormat('es-PE', { style: 'currency', currency }).format(cents / 100);
 export function quoteTotals(items) {
   const totals = new Map();

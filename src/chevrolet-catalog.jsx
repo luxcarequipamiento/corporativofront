@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CarFront, Search, Plus, Check, ArrowRight } from 'lucide-react';
 import { formatMoney } from './quote-utils.js';
-import { getAccessoryModels, getModelAccessories } from './api.js';
+import { getAccessoryModels, getModelAccessories, getModelServices } from './api.js';
 import { catalogToPrices } from './catalog.js';
 import './chevrolet-catalog.css';
 
@@ -13,6 +13,8 @@ export function ProgressiveChevroletCatalog({ onAdd, quoteItems }) {
   const [models, setModels] = useState(null);
   const [activeId, setActiveId] = useState(null);
   const [cache, setCache] = useState({});
+  const [category, setCategory] = useState('accessories');
+  const cacheKey = `${category}:${activeId}`;
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
   useEffect(() => {
@@ -27,19 +29,21 @@ export function ProgressiveChevroletCatalog({ onAdd, quoteItems }) {
     return () => { active = false; };
   }, [retry]);
   useEffect(() => {
-    if (!activeId || Object.hasOwn(cache, activeId)) return;
+    if (!activeId || Object.hasOwn(cache, cacheKey)) return;
     let active = true;
     setError('');
-    getModelAccessories('chevrolet', activeId).then(products => {
-      if (active) setCache(current => ({ ...current, [activeId]: catalogToPrices({ productos: products }).accessories.flatMap(group => group.items) }));
+    const loader = category === 'services' ? getModelServices : getModelAccessories;
+    loader('chevrolet', activeId).then(products => {
+      const prices = catalogToPrices(category === 'services' ? { servicios: products } : { productos: products });
+      if (active) setCache(current => ({ ...current, [cacheKey]: prices[category].flatMap(group => group.items) }));
     }).catch(() => { if (active) setError('No fue posible cargar el equipamiento de este modelo.'); });
     return () => { active = false; };
-  }, [activeId, retry]);
+  }, [activeId, category, retry]);
   if (!models) return <div className="catalog-status" role={error ? 'alert' : 'status'}>{error || 'Cargando modelos...'}{error && <button onClick={() => setRetry(value => value + 1)}>Reintentar</button>}</div>;
-  return <ChevroletCatalog prices={{ accessories: models.map(model => ({ ...model, items: cache[model.id] || [] })) }} activeId={activeId} onModelChange={id => { setError(''); setActiveId(id); }} loading={!!activeId && !Object.hasOwn(cache, activeId)} error={error} onRetry={() => setRetry(value => value + 1)} onAdd={onAdd} quoteItems={quoteItems} />;
+  return <ChevroletCatalog prices={{ accessories: models.map(model => ({ ...model, items: cache[`${category}:${model.id}`] || [] })) }} category={category} onCategoryChange={type => { setError(''); setCategory(type); }} activeId={activeId} onModelChange={id => { setError(''); setActiveId(id); }} loading={!!activeId && !Object.hasOwn(cache, cacheKey)} error={error} onRetry={() => setRetry(value => value + 1)} onAdd={onAdd} quoteItems={quoteItems} />;
 }
 
-export function ChevroletCatalog({ prices, onAdd, quoteItems, activeId: selectedId, onModelChange, loading = false, error = '', onRetry }) {
+export function ChevroletCatalog({ prices, onAdd, quoteItems, activeId: selectedId, onModelChange, category = 'accessories', onCategoryChange, loading = false, error = '', onRetry }) {
   const models = useMemo(() => [...prices.accessories].sort((a,b) => modelOrder.indexOf(a.name) - modelOrder.indexOf(b.name)), [prices]);
   const [activeId, setActiveId] = useState(() => models[0]?.id);
   const [search, setSearch] = useState('');
@@ -59,16 +63,19 @@ export function ChevroletCatalog({ prices, onAdd, quoteItems, activeId: selected
           <img src={`/images/chevrolet-${imageOf(current.name)}-desktop.jpg`} alt={`Chevrolet ${titleOf(current.name)}`} loading="lazy" />
         </div>
         <div className="chevrolet-catalog-toolbar"><label><Search size={18} aria-hidden="true" /><input type="search" aria-label={`Buscar equipamiento para ${current.name}`} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar accesorio o equipamiento" /></label><span>Precios en {currency === 'USD' ? 'USD · dólares' : currency}</span></div>
+        <div className="chevrolet-models" role="tablist" aria-label="Tipo de producto">
+          {[['accessories', 'Accesorios'], ['services', 'Servicios']].map(([type, label]) => <button key={type} type="button" role="tab" aria-selected={category === type} className={category === type ? 'active' : ''} onClick={() => { onCategoryChange?.(type); setSearch(''); }}>{label}{current[type] !== undefined && <span>{current[type]}</span>}</button>)}
+        </div>
         <p className="chevrolet-results" role="status">{loading ? 'Cargando equipamiento...' : `${filtered.length} ${filtered.length === 1 ? 'resultado' : 'resultados'} para ${titleOf(current.name)}`}</p>
         {error && <div className="catalog-status error" role="alert">{error}<button onClick={onRetry}>Reintentar</button></div>}
         <div className="chevrolet-equipment-list">
           {filtered.map((item, index) => {
-            const selected = quoteItems.find((entry) => entry.key === `accessories:${current.id}:${item.id}`);
+            const selected = quoteItems.find((entry) => entry.key === `${category}:${current.id}:${item.id}`);
             return <article className={`chevrolet-equipment${selected ? ' selected' : ''}`} key={item.id}>
               <span className="chevrolet-equipment-index">{String(index + 1).padStart(2, '0')}</span>
               <div className="chevrolet-equipment-name"><h4>{item.name}</h4>{selected ? <span><Check size={12} aria-hidden="true" /> {selected.quantity} en tu orden</span> : <span>Compatible con {titleOf(current.name)}</span>}</div>
               <strong>{item.unitPrice === null ? 'Por confirmar' : formatMoney(item.unitPrice, item.currency)}</strong>
-              <button type="button" onClick={() => onAdd(item, current, 'accessories')} aria-label={`Agregar ${item.name} para ${current.name} a la cotización`}><Plus size={17} aria-hidden="true" /><span>Agregar</span></button>
+              <button type="button" onClick={() => onAdd(item, current, category)} aria-label={`Agregar ${item.name} para ${current.name} a la cotización`}><Plus size={17} aria-hidden="true" /><span>Agregar</span></button>
             </article>;
           })}
           {!loading && !error && !filtered.length && <div className="chevrolet-no-results"><Search size={24} aria-hidden="true" /><p>No encontramos ese equipamiento en este modelo.</p><button type="button" onClick={() => setSearch('')}>Ver todas las opciones <ArrowRight size={16} /></button></div>}

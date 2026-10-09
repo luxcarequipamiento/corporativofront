@@ -11,6 +11,7 @@ export function AddToQuote({ onClick, name }) {
 export function Quotation({ items, setItems, page, nombre, advisor, modelNotice }) {
   const [details, setDetails] = useState({ contact: nombre || '', company: page.name, vehicle: '', vin: '', notes: '' });
   const [exporting, setExporting] = useState(null);
+  const downloadInProgress = useRef(false);
   const [error, setError] = useState('');
   const [orderMessage, setOrderMessage] = useState('');
   const registeredOrders = useRef(new Map());
@@ -23,9 +24,11 @@ export function Quotation({ items, setItems, page, nombre, advisor, modelNotice 
   const missingDetails = [!details.vehicle.trim() && 'Vehículo', !details.vin.trim() && 'Nº de Serie o VIN'].filter(Boolean);
   const updateField = (field, value) => setDetails((current) => ({ ...current, [field]: value }));
   const download = async (documentType) => {
+    if (downloadInProgress.current) return;
     setError('');
     setOrderMessage('');
     if (hasMultipleModels(items)) { setError(SINGLE_MODEL_MESSAGE); return; }
+    downloadInProgress.current = true;
     setExporting(documentType);
     try {
       const { buildOrderPdf, loadQuotationLogos } = await import('./quotation-pdf.js');
@@ -46,7 +49,7 @@ export function Quotation({ items, setItems, page, nombre, advisor, modelNotice 
       setOrderMessage(`${documentType === 'services' ? 'Orden de servicio' : 'Orden de compra'} registrada: ${saved.numero}.`);
     } catch (requestError) {
       setError(requestError.message || 'No fue posible generar el PDF. Intenta descargarlo nuevamente.');
-    } finally { setExporting(null); }
+    } finally { downloadInProgress.current = false; setExporting(null); }
   };
   const clear = () => {
     setItems([]);
@@ -102,8 +105,8 @@ export function Quotation({ items, setItems, page, nombre, advisor, modelNotice 
       {items.length > 0 && (missingDetails.length > 0 || !details.notes.trim()) && <p className="quote-notice" role="status">{missingDetails.length > 0 && `Antes de descargar, recuerda completar: ${missingDetails.join(' y ')}. `}{!details.notes.trim() && 'Agrega una observación si corresponde.'}</p>}
       {error && <p className="form-error" role="alert">{error}</p>}
       {orderMessage && <p className="quote-intro" role="status">{orderMessage}</p>}
-      <button className="quote-download" type="button" aria-busy={exporting === 'purchase'} disabled={!items.some(item => item.type !== 'services') || !!exporting} onClick={() => download('purchase')}>{exporting === 'purchase' ? <LoaderCircle className="button-spinner" size={18} /> : <Download size={18} />}{exporting === 'purchase' ? 'Generando orden de compra...' : 'Descargar orden de compra'}</button>
-      <button className="quote-download" type="button" aria-busy={exporting === 'services'} disabled={!items.some(item => item.type === 'services') || !!exporting} onClick={() => download('services')}>{exporting === 'services' ? <LoaderCircle className="button-spinner" size={18} /> : <Download size={18} />}{exporting === 'services' ? 'Generando orden de servicio...' : 'Descargar orden de servicio'}</button>
+      <button className="quote-download" type="button" aria-busy={exporting === 'purchase'} aria-disabled={!!exporting} disabled={!items.some(item => item.type !== 'services') || exporting === 'purchase'} onClick={() => download('purchase')}>{exporting === 'purchase' ? <LoaderCircle className="button-spinner" size={18} /> : <Download size={18} />}{exporting === 'purchase' ? 'Generando orden de compra...' : 'Descargar orden de compra'}</button>
+      <button className="quote-download" type="button" aria-busy={exporting === 'services'} aria-disabled={!!exporting} disabled={!items.some(item => item.type === 'services') || exporting === 'services'} onClick={() => download('services')}>{exporting === 'services' ? <LoaderCircle className="button-spinner" size={18} /> : <Download size={18} />}{exporting === 'services' ? 'Generando orden de servicio...' : 'Descargar orden de servicio'}</button>
     </aside>
   );
 }

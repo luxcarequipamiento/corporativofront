@@ -92,3 +92,5 @@
 .quote-subtotals dt { color: #aab4c1; }
 .quote-subtotals dt small { display: block; font-size: 10px; color: #e5c775; }
 .quote-subtotals dd { display: grid; gap: 3px; margin: 0; color: #f3f5f8; text-align: right; font-variant-numeric: tabular-nums; }
+
+.quote-download[aria-busy='true']:disabled { opacity: 1; cursor: wait; border-color: var(--brand-accent); background: rgba(255,255,255,.12); }
